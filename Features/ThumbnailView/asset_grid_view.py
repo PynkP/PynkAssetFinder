@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QScrollArea, QGridLayout
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal # 💡 Signal 추가
 
 from Features.ThumbnailView.thumbnail_widget import ThumbnailWidget
 
@@ -16,7 +16,9 @@ class AssetGridView(QScrollArea):
     ITEM_WIDTH = 160      # 썸네일 위젯 하나의 가로 길이
     ITEM_SPACING = 15     # 썸네일 사이의 간격
     MARGIN = 10           # 그리드 전체의 바깥쪽 여백 (좌/우/상/하)
-
+    # 💡 [추가] 썸네일 중 하나가 클릭되면 밖으로 알려줄 릴레이 시그널
+    sig_asset_clicked = Signal(str)
+    
     def __init__(self):
         super().__init__()
         
@@ -71,17 +73,14 @@ class AssetGridView(QScrollArea):
         self.int_current_cols = 0
 
     def addThumbnailChunk(self, _list_chunk_data):
-        """
-        ThumbnailLoader(로더)가 50개씩 던져주는 데이터 덩어리를 받아서 
-        실제 썸네일 위젯으로 만들어 창고에 넣고 화면에 그립니다.
-        """
         for dict_img in _list_chunk_data:
-            # 딕셔너리에서 경로와 이름을 빼내어 위젯을 생성합니다.
             wgt_thumbnail = ThumbnailWidget(dict_img['path'], dict_img['name'])
-            # 창고에 보관!
+            
+            # 💡 [핵심 추가] 개별 썸네일이 눌리면 -> 그리드 뷰의 시그널로 토스(연결)해 줍니다.
+            wgt_thumbnail.sig_clicked.connect(self.sig_asset_clicked.emit)
+            
             self.list_thumb_widgets.append(wgt_thumbnail)
             
-        # 50개를 다 만들었으면 화면에 줄을 다시 세웁니다.
         self.rearrangeGrid()
     
     # ==========================================

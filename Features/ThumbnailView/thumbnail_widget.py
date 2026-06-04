@@ -1,12 +1,10 @@
 
 """썸네일 위젯 클래스 
 사진과 이름표만 신경 쓰고, 클릭되면 관리자에게 보고"""
-
 from PySide6.QtWidgets import QFrame, QVBoxLayout, QLabel
-from PySide6.QtGui import QPixmap, QFontMetrics
-from PySide6.QtCore import Qt
-
-from Core.asset_manager import AssetManager
+# 💡 QImageReader와 QSize를 추가로 불러옵니다.
+from PySide6.QtGui import QPixmap, QFontMetrics, QImageReader
+from PySide6.QtCore import Qt, Signal, QSize
 
 class ThumbnailWidget(QFrame):
     """
@@ -33,7 +31,8 @@ class ThumbnailWidget(QFrame):
             border-radius: 5px;
         }
     """
-    
+    sig_clicked = Signal(str)
+
     # 최기화 영역 wgt_thumbnail = ThumbnailWidget(dict_img['path'], dict_img['name']) 이런식으로 불로올 예정
     def __init__(self, _str_path, _str_name):
         # QFrame을 상속받아야 배경색이나 테두리(border) 같은 CSS 스타일이 정상적으로 먹힙니다.
@@ -63,18 +62,26 @@ class ThumbnailWidget(QFrame):
         
         # --- 1. 이미지 라벨 세팅 ---
         self.wgt_lbl_img = QLabel()
-        self.wgt_lbl_img.setAlignment(Qt.AlignCenter)
+        self.wgt_lbl_img.setAlignment(Qt.AlignCenter) # 이미지를 라벨 중앙에 예쁘게 배치
         
-        # 하드디스크에 있는 이미지를 메모리(QPixmap)로 퍼옵니다.
-        obj_pixmap = QPixmap(self.str_file_path) 
+        obj_reader = QImageReader(self.str_file_path)
         
-        if not obj_pixmap.isNull():
-            # 아무리 4K 텍스처라도 150x150 사이즈로 리사이징합니다.
-            # Qt.KeepAspectRatio: 원본 비율 찌그러짐 방지
-            # Qt.SmoothTransformation: 계단 현상(안티앨리어싱) 방지하여 부드럽게 축소
-            obj_pixmap = obj_pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        # 💡 [핵심] 이미지를 읽기 전에 원본 사이즈 정보만 아주 빠르게 가져옵니다.
+        obj_size_original = obj_reader.size()
+        
+        if obj_size_original.isValid():
+            # 💡 [비율 유지 로직] 원본 비율을 유지(Qt.KeepAspectRatio)하면서 
+            # 150x150 박스 안에 딱 맞게 들어갈 최적의 크기를 계산합니다.
+            obj_size_scaled = obj_size_original.scaled(QSize(150, 150), Qt.KeepAspectRatio)
+            
+            # 계산된 예쁜 비율의 크기로만 이미지를 가볍게 읽어오라고 지시합니다!
+            obj_reader.setScaledSize(obj_size_scaled) 
+        
+        img_scaled = obj_reader.read() 
+        
+        if not img_scaled.isNull():
+            obj_pixmap = QPixmap.fromImage(img_scaled)
             self.wgt_lbl_img.setPixmap(obj_pixmap)
-
         # --- 2. 파일명 라벨 세팅 ---
         self.wgt_lbl_name = QLabel()
         self.wgt_lbl_name.setAlignment(Qt.AlignCenter)
@@ -119,11 +126,8 @@ class ThumbnailWidget(QFrame):
 
     def mousePressEvent(self, _event):
         """마우스로 썸네일을 클릭했을 때"""
-        # 좌클릭일 때만 작동하도록 방어 로직 (나중에 우클릭 메뉴를 달기 위해 분리)
         if _event.button() == Qt.LeftButton:
-            
-            # [MVC 패턴 핵심] UI가 직접 운영체제를 건드리지 않고, 중앙 관리자에게 '경로'만 전달합니다.
-            obj_manager = AssetManager()
-            obj_manager.openAssetFolder(self.str_file_path)
+            # 💡 [변경됨] 직접 매니저를 부르지 않고, "내 경로 옜다!" 하고 시그널만 방출합니다.
+            self.sig_clicked.emit(self.str_file_path)
             
         super().mousePressEvent(_event)

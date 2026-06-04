@@ -1,106 +1,64 @@
+# main.py (일부 수정)
 import sys
-
-from PySide6.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout
-)
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
 from Features.TopMenu.top_bar import TopBar
-from Features.ThumbnailView.main_panel import MainPanel
-from Features.ThumbnailView.thumbnail_loader import ThumbnailLoader
 from Features.CategoryView.category_panel import CategoryPanel
-from Core.asset_manager import AssetManager
+from Features.ThumbnailView.main_panel import MainPanel
+from Features.ThumbnailView.thumbnail_loader import ThumbnailLoader 
+from Core.main_controller import MainController
 
-
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        # 1. 윈도우 기본 설정
-        self.initWindow()
-
-        # 2. 뼈대가 되는 기본 레이아웃 생성
-        self.initBaseLayout()
-
-        # 3. 각 구역별 UI 생성 및 배치
-        self.initTopBarUI()
-        self.initCategoryPanelUI()
-        self.initMainPanelUI()
-
-        # 4. 최종 레이아웃 적용
-        self.setLayout(self.lay_main)
-
-    def initWindow(self):
-        """윈도우 자체의 속성(크기, 배경색 등) 설정"""
         self.setWindowTitle("Pynk Asset Finder")
-        self.resize(1280, 720)
-
-        # 변수: 헝가리안(obj) + 뱀표기법(palette)
-        obj_palette = self.palette()
-        obj_palette.setColor(QPalette.Window, QColor(0, 0, 0))
-        self.setPalette(obj_palette)
-        self.setAutoFillBackground(True)
-
-    def initBaseLayout(self):
-        """각 패널을 담을 메인 레이아웃들만 미리 생성"""
-        # 변수: 헝가리안(lay) + 뱀표기법(main, content)
-        self.lay_main = QVBoxLayout()
-        self.lay_main.setContentsMargins(0, 0, 0, 0)
-        self.lay_main.setSpacing(0)
-
-        self.lay_content = QHBoxLayout()
-        self.lay_content.setContentsMargins(0, 0, 0, 0)
-        self.lay_content.setSpacing(0)
-
-    def initTopBarUI(self):
-        """상단 바 생성 및 메인 레이아웃에 추가"""
-        # 변수: 헝가리안(wgt) + 뱀표기법(top_bar)
-        self.wgt_top_bar = TopBar()
-        self.lay_main.addWidget(self.wgt_top_bar)
-
-    def initCategoryPanelUI(self):
-        """카테고리 패널 생성 및 컨텐츠(가로) 레이아웃에 추가"""
-        self.wgt_category_panel = CategoryPanel()
-        self.lay_content.addWidget(self.wgt_category_panel)
-
-    def initMainPanelUI(self):
-        self.wgt_main_panel = MainPanel()
-        self.lay_content.addWidget(self.wgt_main_panel)
-        self.lay_main.addLayout(self.lay_content)
-
+        self.resize(1200, 800)
+        self.setStyleSheet("background-color: rgb(20, 20, 20); color: white;")
+        
+        # 1. UI 위젯 배치
+        self._initUI()
+        
+        # 💡 2. 로더 생성 및 시그널 연결 (콜백 방식 제거)
         self.obj_chunk_loader = ThumbnailLoader()
         obj_grid_view = self.wgt_main_panel.getGridView()
         
-        # 💡 3개의 스위치를 로더에게 몽땅 쥐여줍니다.
-        self.obj_chunk_loader.setCallbacks(
-            _func_clear=obj_grid_view.clearGrid,                # 화면 청소 스위치
-            _func_chunk=obj_grid_view.addThumbnailChunk,        # 화면 그리기 스위치
-            _func_completed=None                          # 💡 에러 원인 제거! 당장 필요 없는 스위치는 None으로 뺍니다.
-            #_func_completed=self.wgt_top_bar.onDrawCompleted    # 상단바 복구 스위치 (필요시 ScanButton의 함수로 변경 가능)
-        )
-
-        # 💡 [핵심 변경] TopBar의 '스마트 버튼(btn_scan)'이 쏘는 완료 신호를 마스터 함수에 연결합니다!
-        self.wgt_top_bar.btn_scan.sig_scan_completed.connect(self.onScanCompleted)
-
-    # ==========================================
-    # 🔗 [콜백 (이벤트) 관리 구역]
-    # ==========================================
-    def onScanCompleted(self):
-        """스캔 버튼에서 폴더 스캔을 성공적으로 마쳤다는 신호가 오면 실행됩니다."""
-        # 1. 썸네일 쪽 로더 가동! (오른쪽 바둑판 그리기)
-        self.obj_chunk_loader.reloadAssets()
+        # 로더가 소리치면(Signal), 그리드 뷰가 행동(Slot)하도록 직통 전화선 연결!
+        self.obj_chunk_loader.sig_clear_requested.connect(obj_grid_view.clearGrid)
+        self.obj_chunk_loader.sig_chunk_ready.connect(obj_grid_view.addThumbnailChunk)
+        # (필요하다면 sig_load_completed 도 연결할 수 있습니다)
         
-        # 2. 왼쪽 카테고리 패널에 새 데이터 새로고침!
-        self.wgt_category_panel.updateCategoryList()
+        # 3. 컨트롤러 고용
+        self.obj_controller = MainController(_wgt_main_window=self)
 
+    def _initUI(self):
+        wgt_central = QWidget()
+        lay_main = QVBoxLayout()
+        lay_main.setContentsMargins(0, 0, 0, 0)
+        lay_main.setSpacing(0)
+        
+        self.wgt_top_bar = TopBar()
+        lay_main.addWidget(self.wgt_top_bar)
+        
+        lay_content = QHBoxLayout()
+        lay_content.setContentsMargins(0, 0, 0, 0)
+        lay_content.setSpacing(0)
+        
+        self.wgt_category_panel = CategoryPanel()
+        lay_content.addWidget(self.wgt_category_panel, 1)
+        
+        self.wgt_main_panel = MainPanel()
+        lay_content.addWidget(self.wgt_main_panel, 4)
+        
+        lay_main.addLayout(lay_content)
+        wgt_central.setLayout(lay_main)
+        self.setCentralWidget(wgt_central)
+
+    def openFolderDialog(self):
+        str_path = QFileDialog.getExistingDirectory(self, "Select Asset Folder")
+        return str_path
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    window = MainWindow()
-    window.show()
-
+    wgt_window = MainWindow()
+    wgt_window.show()
     sys.exit(app.exec())
