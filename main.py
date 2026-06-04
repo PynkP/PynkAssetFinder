@@ -1,11 +1,14 @@
 # main.py (일부 수정)
 import sys
+import os # 파일 경로 확인용
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
 from Features.TopMenu.top_bar import TopBar
 from Features.CategoryView.category_panel import CategoryPanel
 from Features.ThumbnailView.main_panel import MainPanel
 from Features.ThumbnailView.thumbnail_loader import ThumbnailLoader 
+from Features.BottomBar.bottom_bar import BottomBar
+
 from Core.main_controller import MainController
 
 class MainWindow(QMainWindow):
@@ -13,7 +16,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Pynk Asset Finder")
         self.resize(1200, 800)
-        self.setStyleSheet("background-color: rgb(20, 20, 20); color: white;")
         
         # 1. UI 위젯 배치
         self._initUI()
@@ -28,8 +30,8 @@ class MainWindow(QMainWindow):
         # (필요하다면 sig_load_completed 도 연결할 수 있습니다)
         
         # 3. 컨트롤러 고용
-        self.obj_controller = MainController(_wgt_main_window=self)
-
+        self.obj_controller = MainController(_wgt_main=self)
+    
     def _initUI(self):
         wgt_central = QWidget()
         lay_main = QVBoxLayout()
@@ -49,7 +51,13 @@ class MainWindow(QMainWindow):
         self.wgt_main_panel = MainPanel()
         lay_content.addWidget(self.wgt_main_panel, 4)
         
+        # (기존 코드) 중앙 패널들을 메인 레이아웃에 추가합니다.
         lay_main.addLayout(lay_content)
+        
+        # 💡 2. 가장 마지막(화면 맨 아래)에 바텀 바를 장착합니다!
+        self.wgt_bottom_bar = BottomBar()
+        lay_main.addWidget(self.wgt_bottom_bar)
+        
         wgt_central.setLayout(lay_main)
         self.setCentralWidget(wgt_central)
 
@@ -59,6 +67,17 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    wgt_window = MainWindow()
-    wgt_window.show()
+    
+    # 💡 1. 스타일 시트 파일 읽어서 프로그램 전체(app)에 적용하기!
+    str_qss_path = "Resources/style.qss"
+    if os.path.exists(str_qss_path):
+        with open(str_qss_path, "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+            print("🎨 스타일 시트 로드 완료!")
+    else:
+        print("⚠️ 경고: Resources/style.qss 파일을 찾을 수 없습니다.")
+
+    # 2. 메인 윈도우 실행
+    window = MainWindow()
+    window.show()
     sys.exit(app.exec())

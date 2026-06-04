@@ -1,0 +1,29 @@
+/* Resources/style.qss */
+
+/* 💡 1. 쉼표로 연결해서 ScanButton 커스텀 클래스도 같이 디자인을 입혀줍니다! */
+QPushButton, ScanButton {
+    background-color: rgb(50, 50, 50);
+    color: white;
+    border-radius: 3px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    
+    /* 💡 2. 폰트 오류를 막기 위해 가장 확실한 폰트 딱 하나만 지정합니다! */
+    font-family: "맑은 고딕"; 
+}
+
+/* 마우스 올렸을 때 효과도 두 개 다 적용 */
+QPushButton:hover, ScanButton:hover {
+    background-color: #45a049;
+}
+
+QMainWindow {
+    background-color: rgb(20, 20, 20);
+    color: white;
+}
+
+/* TopBar 전용 배경색 */
+TopBar {
+    background-color: rgb(40, 40, 40);
+}
