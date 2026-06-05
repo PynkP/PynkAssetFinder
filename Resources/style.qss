@@ -27,3 +27,38 @@ QMainWindow {
 TopBar {
     background-color: rgb(40, 40, 40);
 }
+
+#=============================================================
+
+/* 패널 전체 배경색 */
+#CategoryPanel {
+    background-color: rgb(20, 20, 20);
+    border-radius: 3px;
+    color: white;
+}
+
+/* 카테고리 트리 위젯 */
+#CategoryTree {
+    background-color: transparent; 
+    border: none; 
+    font-size: 13px; 
+    outline: none; 
+}
+
+/* 트리 위젯 안의 각각의 항목(폴더들) */
+#CategoryTree::item {
+    padding: 3px; 
+    color: white; /* 글씨색 흰색 보장 */
+}
+
+/* 마우스로 클릭했을 때(선택됨)의 스타일 */
+#CategoryTree::item:selected {
+    background-color: rgb(80, 120, 200); 
+    border-radius: 4px; 
+}
+
+/* 마우스만 살짝 올렸을 때(Hover)의 효과도 추가해 볼까요? (선택사항) */
+#CategoryTree::item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 1px; 
+}

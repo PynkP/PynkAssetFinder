@@ -56,3 +56,29 @@ class AssetManager:
         # 2. 운영체제 탐색기 열기
         QDesktopServices.openUrl(QUrl.fromLocalFile(str_folder_path))
         return True
+    
+    def getFilteredAssets(self, _str_category_name: str) -> list:
+        """
+        특정 카테고리 이름이 포함된 에셋만 쏙쏙 골라서 반환합니다.
+        """
+        # 만약 최상위 "Root"를 클릭했다면? 필터링 없이 전체 데이터를 다 줍니다.
+        if _str_category_name == "Root":
+            return self.list_assets
+            
+        list_filtered = []
+        str_target = _str_category_name.lower() # 검색할 단어를 소문자로 통일
+        
+        for asset in self.list_assets:
+            # 1. 카테고리가 아예 없는 파일들 처리 ("Uncategorized" 클릭 시)
+            if not asset.list_categories:
+                if str_target == "uncategorized":
+                    list_filtered.append(asset)
+                continue
+                
+            # 2. 에셋이 가진 카테고리들을 전부 소문자로 바꿔서 타겟이 있는지 검사!
+            # (UI는 "Nature"지만 데이터는 "nature"일 수 있으니 안전하게 대소문자 무시)
+            list_lower_cats = [cat.lower() for cat in asset.list_categories]
+            if str_target in list_lower_cats:
+                list_filtered.append(asset)
+                
+        return list_filtered

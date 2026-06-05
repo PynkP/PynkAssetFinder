@@ -1,0 +1,10 @@
+# 파이썬 캐시 파일
+__pycache__/
+*.pyc
+
+# PyInstaller 빌드 결과물 및 찌꺼기
+Build/
+build/
+dist/
+*.spec
+*.exe

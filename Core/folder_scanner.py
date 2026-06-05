@@ -1,26 +1,23 @@
+# Core/folder_scanner.py
+
 import os
 from PySide6.QtCore import QThread, Signal
-from Core.asset_manager import AssetManager
-from Core.category_manager import CategoryManager
+from Core.Models.metadata import MetaData # 💡 우리가 만든 구조체 수입!
 
 class FolderScanner(QThread):
-    # 💡 1. bool이 아니라 list(딕셔너리들을 담은 리스트)를 던지도록 시그널 정의
     sig_finished = Signal(list)
 
-    def __init__(self, _str_target_path, _set_valid_extensions=None):
+    def __init__(self, _str_directory, _set_valid_extensions=None):
         super().__init__()
-        self.str_target_path = _str_target_path
+        self.str_directory = _str_directory
         
+        # 확장자 세팅
         if _set_valid_extensions is None:
-            self.set_valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
+            self.set_valid_extensions = {'.png', '.jpg', '.jpeg', '.tga', '.exr'}
         else:
             self.set_valid_extensions = _set_valid_extensions
 
     def run(self):
-        """os.scandir를 이용한 초고속 스캔 로직 수행"""
-        print(f"📁 [FolderScanner] 스캔 시작: {self.str_target_path}")
-        print(f"🔍 찾는 확장자: {self.set_valid_extensions}")
-        
         list_info = []
 
         def _scanDirectoryFast(_str_current_path):
@@ -30,44 +27,45 @@ class FolderScanner(QThread):
                         _scanDirectoryFast(obj_entry.path)
                         
                     elif obj_entry.is_file(follow_symlinks=False):
-                        # 💡 [핵심 추가] 파일 이름에 우리가 만든 캐시 이름이 포함되어 있으면 통과!
+                        # 💡 캐시 파일은 건너뛰기
                         if "_pynk_asset_cache.json" in obj_entry.name:
                             continue 
 
-                        # 기존 스캔 로직 진행
                         str_ext = os.path.splitext(obj_entry.name)[1].lower()
                         if str_ext in self.set_valid_extensions:
-                            list_info.append({
-                                "name": obj_entry.name,
-                                "path": obj_entry.path,
-                                "ext": str_ext
-                            })
+                            
+                            # 💡 함수화된 로직으로 깔끔하게 장바구니에 담기!
+                            if str_ext == ".json":
+                                list_info.append(self._jsonScan(obj_entry, str_ext))
+                            else:
+                                list_info.append(self._imgScan(obj_entry))
+                                
             except PermissionError:
                 pass
 
-        # 1. 파일 초고속 스캔 실행
-        _scanDirectoryFast(self.str_target_path)
-
-        # 2. 💡 [수정] 스캐너는 스스로 업데이트하지 않고, 지휘관에게 찾은 딕셔너리 리스트를 그대로 바칩니다!
+        print(f"🚀 [FolderScanner] 탐색 시작: {self.str_directory}")
+        _scanDirectoryFast(self.str_directory)
+        
         self.sig_finished.emit(list_info)
 
-    # ==========================================
-    # 🛠️ [내부 전용 함수 구역]
-    # ==========================================
-    def _updateAssetData(self, _list_info):
-        """중앙 에셋 창고의 데이터를 최신화합니다."""
-        obj_asset_manager = AssetManager()
-        obj_asset_manager.clearAssets()
-        obj_asset_manager.addAssets(_list_info)
+    # ========================================================
+    # 📦 분리된 포장(Parsing) 전담 함수들
+    # ========================================================
+    def _jsonScan(self, _obj_entry, _str_ext):
+        """메가스캔 JSON 파일은 번역가를 위해 날것(Raw) 딕셔너리로 넘깁니다."""
+        return {
+            "name": _obj_entry.name,
+            "path": _obj_entry.path,
+            "ext": _str_ext
+        }
 
-    def _updateCategoryData(self, _list_info):
-        """카테고리(좌측 패널) 창고의 데이터를 최신화합니다."""
-        obj_category_manager = CategoryManager()
-        obj_category_manager.clearCategories()
-
-        # 💡 [수정] 경로 끝에 '/'가 붙어있어도 안전하게 이름만 쏙 빼내는 마법의 코드
-        str_clean_path = os.path.normpath(self.str_target_path)
-        str_folder_name = os.path.basename(str_clean_path)
+    def _imgScan(self, _obj_entry):
+        """일반 이미지는 PynkAsset 구조체(MetaData)에 완벽하게 맞춰서 포장합니다."""
+        str_pure_name = os.path.splitext(_obj_entry.name)[0]
         
-        int_file_count = len(_list_info)
-        obj_category_manager.addCategory(str_folder_name, int_file_count)
+        return MetaData(
+            str_id=str_pure_name,            # 파일 이름
+            str_path_preview=_obj_entry.path,  # 파일 절대 경로
+            str_asset_type="Image",          # 고정값
+            list_categories=["2d"]           # 고정값
+        )

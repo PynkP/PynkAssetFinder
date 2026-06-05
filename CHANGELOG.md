@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-06-05
+
+### Added
+- 메타 데이터(MetaData) 구조 추가 및 표준 데이터 규약 통일
+- 카테고리 패널 UI 추가 및 클릭 기반의 필터링 기능 구현
+- JSON 파일의 "categories" 값을 기준으로 카테고리를 자동 생성하는 로직 추가
+- 애플리케이션 아이콘(App Icon) 적용
+
+### Changed
+- JSON 데이터의 저장(Save) 및 불러오기(Load) 기준을 새로운 메타 데이터(MetaData) 규약으로 전면 통합 및 변경
+
 ## [0.2.0] - 2026-06-05
 
 ### Added

@@ -1,3 +1,5 @@
+#ThumnailVew/asset_grid_view.py
+
 from PySide6.QtWidgets import QWidget, QScrollArea, QGridLayout
 from PySide6.QtCore import Qt, Signal # 💡 Signal 추가
 
@@ -73,8 +75,8 @@ class AssetGridView(QScrollArea):
         self.int_current_cols = 0
 
     def addThumbnailChunk(self, _list_chunk_data):
-        for dict_img in _list_chunk_data:
-            wgt_thumbnail = ThumbnailWidget(dict_img['path'], dict_img['name'])
+        for data_img in _list_chunk_data:
+            wgt_thumbnail = ThumbnailWidget(data_img.str_path_preview, data_img.str_id)
             
             # 💡 [핵심 추가] 개별 썸네일이 눌리면 -> 그리드 뷰의 시그널로 토스(연결)해 줍니다.
             wgt_thumbnail.sig_clicked.connect(self.sig_asset_clicked.emit)

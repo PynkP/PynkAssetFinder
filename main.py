@@ -1,7 +1,10 @@
 # main.py (일부 수정)
 import sys
 import os # 파일 경로 확인용
+import ctypes
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
+
+from PySide6.QtGui import QIcon
 
 from Features.TopMenu.top_bar import TopBar
 from Features.CategoryView.category_panel import CategoryPanel
@@ -11,12 +14,27 @@ from Features.BottomBar.bottom_bar import BottomBar
 
 from Core.main_controller import MainController
 
+
+# 💡 [추가] exe 파일로 만들었을 때도 리소스(아이콘, qss) 위치를 완벽하게 찾아주는 마법의 함수!
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller가 만든 임시 폴더 경로를 찾습니다.
+        base_path = sys._MEIPASS
+    except Exception:
+        # 일반 파이썬 실행일 때는 현재 폴더를 기준으로 합니다.
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Pynk Asset Finder")
         self.resize(1200, 800)
-        
+
+        self.setWindowIcon(QIcon(resource_path("Resources/icons/app_icon.ico")))
+
         # 1. UI 위젯 배치
         self._initUI()
         
@@ -64,12 +82,25 @@ class MainWindow(QMainWindow):
     def openFolderDialog(self):
         str_path = QFileDialog.getExistingDirectory(self, "Select Asset Folder")
         return str_path
+    
 
 if __name__ == "__main__":
+
+    # 💡 [핵심 마법] 윈도우 작업표시줄 아이콘 분리 독립 선언!
+    try:
+        # 나만의 고유한 프로그램 ID를 만듭니다 (이름은 마음대로 하셔도 됩니다)
+        myappid = 'pynkp.assetfinder.version_1' 
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception as e:
+        pass # (혹시라도 Mac이나 Linux에서 실행될 때 에러가 나지 않도록 하는 안전장치)
+
     app = QApplication(sys.argv)
     
-    # 💡 1. 스타일 시트 파일 읽어서 프로그램 전체(app)에 적용하기!
-    str_qss_path = "Resources/style.qss"
+    # 💡 [수정 2] 프로그램 전체 아이콘에도 resource_path 마법 적용!
+    app.setWindowIcon(QIcon(resource_path("Resources/icons/app_icon.ico")))
+
+    # 💡 [수정 3] 스타일 시트(QSS) 경로에도 resource_path 마법 적용!
+    str_qss_path = resource_path("Resources/style.qss")
     if os.path.exists(str_qss_path):
         with open(str_qss_path, "r", encoding="utf-8") as f:
             app.setStyleSheet(f.read())

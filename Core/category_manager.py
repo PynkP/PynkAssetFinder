@@ -1,29 +1,89 @@
-class CategoryManager:
-    """왼쪽 카테고리 뷰에 표시될 폴더(분류)들의 정보를 전담해서 기억하는 관리소입니다."""
-    
-    # 싱글턴 객체를 저장할 클래스 변수
-    _instance = None
+# Core/category_manager.py
 
-    def __new__(cls):
-        # 이미 생성된 객체가 없다면 새로 만들고, 있다면 기존 객체를 그대로 반환합니다.
-        if cls._instance is None:
-            cls._instance = super(CategoryManager, cls).__new__(cls)
-            # 초기화 작업은 여기서 최초 1회만 실행됩니다.
-            cls._instance.list_categories = []
-        return cls._instance
+from PySide6.QtCore import QObject, Signal
 
-    def addCategory(self, _str_name, _int_count):
-        """새로 스캔된 폴더의 이름과 파일 갯수를 리스트에 추가합니다."""
-        dict_category = {
-            "name": _str_name,
-            "count": _int_count
-        }
-        self.list_categories.append(dict_category)
+class CategoryNode:
+    """트리 구조를 만들기 위한 개별 폴더(노드) 구조체입니다."""
+    def __init__(self, _str_name):
+        self.str_name = _str_name   # 폴더 이름 (예: "3d", "nature")
+        self.int_count = 0          # 이 폴더(하위 포함)에 속한 에셋 개수
+        self.dict_children = {}     # 하위 폴더들 (이름: CategoryNode)
 
-    def getAllCategories(self):
-        """저장된 모든 카테고리 목록을 반환합니다."""
-        return self.list_categories
+
+class CategoryManager(QObject):
+    # 💡 트리가 완성되면 화면 팀장에게 "트리 완성됐으니 그려라!" 라고 알려줄 신호
+    sig_categories_updated = Signal(object) 
+
+    def __init__(self):
+        super().__init__()
+        # 가상의 "최상위(Root) 폴더"를 하나 만듭니다. (모든 폴더의 시작점)
+        self.obj_root_node = CategoryNode("Root")
 
     def clearCategories(self):
-        """저장된 카테고리 목록을 모두 지웁니다."""
-        self.list_categories.clear()
+        """기존 트리를 싹 비우고 초기화합니다."""
+        self.obj_root_node = CategoryNode("Root")
+
+    def buildCategoryTree(self, _list_metadata_assets):
+        """
+        창고(AssetManager)에 있는 모든 데이터를 받아서 완벽한 트리를 구축합니다.
+        """
+        self.clearCategories()
+
+        # 1. 창고에 있는 모든 MetaData를 하나씩 꺼내봅니다.
+        for asset in _list_metadata_assets:
+            list_categories = asset.list_categories
+            
+            # (만약 카테고리가 아예 없는 파일이라면 "Uncategorized" 폴더에 넣습니다)
+            if not list_categories:
+                list_categories = ["Uncategorized"]
+
+            # 2. 최상위(Root)부터 탐색 시작!
+            current_node = self.obj_root_node
+            current_node.int_count += 1 # 전체 에셋 개수 +1
+            
+            # 3. ["3d", "nature", "rock"] 리스트를 순서대로 파고 내려갑니다.
+            for str_category_name in list_categories:
+                
+                # 대문자로 시작하게 예쁘게 다듬기 (예: "3d" -> "3D", "nature" -> "Nature")
+                str_display_name = str_category_name.capitalize() 
+                
+                # 방(하위 폴더)이 없으면 새로 만들어줍니다.
+                if str_display_name not in current_node.dict_children:
+                    current_node.dict_children[str_display_name] = CategoryNode(str_display_name)
+                
+                # 4. 하위 방으로 한 칸 들어갑니다.
+                current_node = current_node.dict_children[str_display_name]
+                
+                # 5. 들어간 방의 개수를 +1 해줍니다.
+                current_node.int_count += 1
+
+        print(f"🌲 [CategoryManager] 트리 구축 완료! (총 {self.obj_root_node.int_count}개 에셋 분류됨)")
+        
+        # 구축된 트리의 최상위(Root) 노드를 신호에 실어서 보냅니다.
+        self.sig_categories_updated.emit(self.obj_root_node)
+
+    def getFilteredAssets(self, _str_category_name: str) -> list:
+        """
+        특정 카테고리 이름이 포함된 에셋만 쏙쏙 골라서 반환합니다.
+        """
+        # 만약 최상위 "Root"를 클릭했다면? 필터링 없이 전체 데이터를 다 줍니다.
+        if _str_category_name == "Root":
+            return self.list_assets
+            
+        list_filtered = []
+        str_target = _str_category_name.lower() # 검색할 단어를 소문자로 통일
+        
+        for asset in self.list_assets:
+            # 1. 카테고리가 아예 없는 파일들 처리 ("Uncategorized" 클릭 시)
+            if not asset.list_categories:
+                if str_target == "uncategorized":
+                    list_filtered.append(asset)
+                continue
+                
+            # 2. 에셋이 가진 카테고리들을 전부 소문자로 바꿔서 타겟이 있는지 검사!
+            # (UI는 "Nature"지만 데이터는 "nature"일 수 있으니 안전하게 대소문자 무시)
+            list_lower_cats = [cat.lower() for cat in asset.list_categories]
+            if str_target in list_lower_cats:
+                list_filtered.append(asset)
+                
+        return list_filtered
