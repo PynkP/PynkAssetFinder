@@ -8,6 +8,7 @@ from Core.category_manager import CategoryManager
 from Core.Controllers.scan_controller import ScanController
 from Core.Controllers.view_controller import ViewController
 from Core.Controllers.cache_controller import CacheController # 💡 신규 채용!
+from Features.RegisterWindow.register_controller import RegisterController
 
 class MainController(QObject):
     """최상위 지휘관: 팀장들을 고용하고, 부서 간의 소통 창구만 연결해 줍니다."""
@@ -23,6 +24,7 @@ class MainController(QObject):
         self.ctrl_scan = ScanController(self.wgt_main, self.obj_asset_manager)
         self.ctrl_view = ViewController(self.wgt_main, self.obj_asset_manager)
         self.ctrl_cache = CacheController(self.wgt_main, self.obj_asset_manager)
+        self.ctrl_register = RegisterController(self.wgt_main, self.obj_asset_manager)
 
         # 3. 부서 간 소통 연결망 구축
         self.initConnections()
@@ -35,16 +37,22 @@ class MainController(QObject):
         # 💡 캐시 로드 끝 -> 화면 갱신
         self.ctrl_cache.sig_cache_loaded.connect(self.ctrl_view.refreshGridView)
 
+        # 💡 에셋 개별 등록 완료 -> 화면 갱신
+        self.ctrl_register.sig_asset_registered.connect(self.ctrl_view.refreshGridView)
+
         # ==========================================
         # 💡 2. [추가] 카테고리 트리 구축 지시
         # ==========================================
         # 스캔이나 로드가 끝났을 때, 카테고리 매니저를 호출해서 트리를 갱신하라고 지시합니다.
         # (람다를 써서 창고의 리스트를 통째로 넘겨줍니다)
         self.ctrl_scan.sig_scan_all_finished.connect(
-            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.list_assets)
+            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
         )
         self.ctrl_cache.sig_cache_loaded.connect(
-            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.list_assets)
+            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
+        )
+        self.ctrl_register.sig_asset_registered.connect(
+            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
         )
         # ==========================================
         # 💡 [추가] 매니저가 "트리 완성했다!" 하고 신호를 보내면, 

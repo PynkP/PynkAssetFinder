@@ -16,13 +16,13 @@ class ViewController(QObject):
         obj_grid_view = self.wgt_main.wgt_main_panel.getGridView()
         obj_grid_view.sig_asset_clicked.connect(self.handleAssetClicked)
 
-    def refreshGridView(self, _list_assets=None):
+    def refreshGridView(self, _list_all_assets=None):
         """사장님이 화면을 갱신하라고 지시할 때 호출됩니다."""
         obj_grid_view = self.wgt_main.wgt_main_panel.getGridView()
         obj_grid_view.clearGrid() # 화면 싹 비우기!
         
         # 💡 [핵심] 사장님이 특정 리스트를 넘겨줬으면 그걸 쓰고, 아니면 창고 전체 털어오기!
-        list_target = _list_assets if _list_assets is not None else self.obj_asset_manager.list_assets
+        list_target = _list_all_assets if _list_all_assets is not None else self.obj_asset_manager.getAllAssets()
         
         if list_target:
             obj_grid_view.addThumbnailChunk(list_target)

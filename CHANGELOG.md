@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-06-07
+
+### Added
+- 신규 에셋 등록을 위한 Register 창 및 테스트 UI 추가
+- 개별 데이터를 불러올 수 있는 Load Data 기능 구현
+- 에셋 생성 및 관리를 담당하는 `asset_factory.py` 및 Register 관련 모듈 추가
+
+### Changed
+- **AssetManager 로직 최적화:** 중복으로 관리되던 `list_assets` 변수를 제거하고, `getAllAssets()` 함수를 통해 데이터를 직접 전달하도록 구조 개선
+- **카테고리 폴더 트리 구조 개편:** 최상단(Root) 노드를 추가하고, 2D, 3D, Brush의 하위 카테고리까지만 표시되도록 분류 트리(Depth) 간소화
+
 ## [0.3.0] - 2026-06-05
 
 ### Added

@@ -43,16 +43,21 @@ class CategoryPanel(QWidget):
     # ========================================================
     def updateCategoryTree(self, _obj_root_node):
         """
-        CategoryManager가 쏴준 Root 노드를 받아서 재귀적으로 트리를 그립니다!
+        CategoryManager가 쏴준 Root 노드를 받아서 트리를 그립니다!
+        Root(All) 노드도 클릭 가능하게 최상단에 표시합니다.
         """
-        self.wgt_tree.clear() # 기존 트리 비우기
-        
-        # Root(최상위)의 자식들을 트리 위젯의 최상단 아이템으로 추가합니다.
+        self.wgt_tree.clear()
+
+        # 💡 Root(All) 노드를 최상단 아이템으로 직접 추가!
+        item_root = QTreeWidgetItem(self.wgt_tree)
+        item_root.setText(0, f"📁 Root (All) ({_obj_root_node.int_count})")
+        item_root.setData(0, Qt.UserRole, "Root")
+
+        # Root의 자식들(2D, 3D, Uncategorized)을 Root 아래에 추가
         for str_name, obj_child_node in _obj_root_node.dict_children.items():
-            item_top = QTreeWidgetItem(self.wgt_tree)
+            item_top = QTreeWidgetItem(item_root)
             self._buildTreeItem(item_top, obj_child_node)
-            
-        # 💡 트리가 완성되면 모든 폴더를 활짝 열어둡니다!
+
         self.wgt_tree.expandAll()
 
     def _buildTreeItem(self, _item_ui, _node_data):

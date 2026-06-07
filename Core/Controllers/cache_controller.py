@@ -24,7 +24,7 @@ class CacheController(QObject):
     # 💾 캐시 저장 로직 (Save)
     # ========================================================
     def handleSaveCache(self):
-        if not self.obj_asset_manager.list_assets:
+        if not self.obj_asset_manager.getAllAssets():
             QMessageBox.warning(self.wgt_main, "저장 불가", "스캔된 에셋이 없습니다!")
             return
             
@@ -35,7 +35,7 @@ class CacheController(QObject):
             
         try:
             # 💡 [핵심 변경점] 창고에 있는 MetaData 객체들을 json이 알 수 있게 딕셔너리로 변환!
-            list_dict_assets = [asset.to_dict() for asset in self.obj_asset_manager.list_assets]
+            list_dict_assets = [asset.to_dict() for asset in self.obj_asset_manager.getAllAssets()]
             
             with open(str_save_path, 'w', encoding='utf-8') as f:
                 # 변환된 딕셔너리 리스트를 파일로 굽습니다
@@ -64,12 +64,13 @@ class CacheController(QObject):
             # (** 문법을 쓰면 딕셔너리의 키워드를 구조체에 쏙쏙 알아서 매칭해 줍니다)
             list_metadata_assets = [MetaData(**dict_data) for dict_data in list_raw_data]
             
-            # 창고에 적재
-            self.obj_asset_manager.list_assets = list_metadata_assets
+            # 창고 비우고 새로 적재
+            self.obj_asset_manager.clearAssets()
+            self.obj_asset_manager.addAssets(list_metadata_assets)
             
             # 사장님께 로드 완료 보고!
             self.sig_cache_loaded.emit() 
-            print(f"📂 [CacheController] 캐시 로드 성공: 총 {len(self.obj_asset_manager.list_assets)}개")
+            print(f"📂 [CacheController] 캐시 로드 성공: 총 {self.obj_asset_manager.getAssetCount()}개")
             
         except Exception as e:
             print(f"❌ 캐시 로드 에러: {e}")

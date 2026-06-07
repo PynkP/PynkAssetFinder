@@ -42,6 +42,12 @@ class TopBar(QFrame):
         # 💡 [핵심 추가] 레이아웃 끝에 '스프링'을 달아서 버튼을 왼쪽으로 쫙 밀어줍니다!
         lay_main.addStretch() 
         
+        # 3. Register 버튼
+        self.btn_register = QPushButton("Register")
+        self.btn_register.setMinimumHeight(30)
+        self.btn_register.setMinimumWidth(90)
+        lay_main.addWidget(self.btn_register)
+        
         self.btn_load = QPushButton("Load Cache")
         self.btn_load.setMinimumHeight(30)
         self.btn_load.setMinimumWidth(90)

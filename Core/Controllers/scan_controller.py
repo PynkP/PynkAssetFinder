@@ -37,7 +37,8 @@ class ScanController(QObject):
         self.thr_scanner.start()
 
     def _onScanCompleted(self, _list_info):
-        self.obj_asset_manager.list_assets = _list_info
+        self.obj_asset_manager.clearAssets()
+        self.obj_asset_manager.addAssets(_list_info)
         self.sig_scan_all_finished.emit() # 사장님께 보고!
 
     # --------------------------------------------------------
@@ -58,5 +59,6 @@ class ScanController(QObject):
         self.thr_parser.start()
 
     def _onJsonParseCompleted(self, _list_parsed_assets):
-        self.obj_asset_manager.list_assets = _list_parsed_assets
+        self.obj_asset_manager.clearAssets()
+        self.obj_asset_manager.addAssets(_list_parsed_assets)
         self.sig_scan_all_finished.emit() # 사장님께 보고!

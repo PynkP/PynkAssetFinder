@@ -63,12 +63,12 @@ class AssetManager:
         """
         # 만약 최상위 "Root"를 클릭했다면? 필터링 없이 전체 데이터를 다 줍니다.
         if _str_category_name == "Root":
-            return self.list_assets
+            return self.list_all_assets
             
         list_filtered = []
         str_target = _str_category_name.lower() # 검색할 단어를 소문자로 통일
         
-        for asset in self.list_assets:
+        for asset in self.list_all_assets:
             # 1. 카테고리가 아예 없는 파일들 처리 ("Uncategorized" 클릭 시)
             if not asset.list_categories:
                 if str_target == "uncategorized":

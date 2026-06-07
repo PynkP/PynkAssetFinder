@@ -25,37 +25,39 @@ class CategoryManager(QObject):
 
     def buildCategoryTree(self, _list_metadata_assets):
         """
-        창고(AssetManager)에 있는 모든 데이터를 받아서 완벽한 트리를 구축합니다.
+        창고(AssetManager)에 있는 모든 데이터를 받아서 평탄화된 트리를 구축합니다.
+        구조: Root (All) → 2D / 3D / Uncategorized → 개별 카테고리들 (1단계만)
         """
         self.clearCategories()
 
-        # 1. 창고에 있는 모든 MetaData를 하나씩 꺼내봅니다.
         for asset in _list_metadata_assets:
             list_categories = asset.list_categories
-            
-            # (만약 카테고리가 아예 없는 파일이라면 "Uncategorized" 폴더에 넣습니다)
+
+            # 카테고리가 아예 없는 파일은 Uncategorized로
             if not list_categories:
                 list_categories = ["Uncategorized"]
 
-            # 2. 최상위(Root)부터 탐색 시작!
-            current_node = self.obj_root_node
-            current_node.int_count += 1 # 전체 에셋 개수 +1
-            
-            # 3. ["3d", "nature", "rock"] 리스트를 순서대로 파고 내려갑니다.
-            for str_category_name in list_categories:
-                
-                # 대문자로 시작하게 예쁘게 다듬기 (예: "3d" -> "3D", "nature" -> "Nature")
-                str_display_name = str_category_name.capitalize() 
-                
-                # 방(하위 폴더)이 없으면 새로 만들어줍니다.
-                if str_display_name not in current_node.dict_children:
-                    current_node.dict_children[str_display_name] = CategoryNode(str_display_name)
-                
-                # 4. 하위 방으로 한 칸 들어갑니다.
-                current_node = current_node.dict_children[str_display_name]
-                
-                # 5. 들어간 방의 개수를 +1 해줍니다.
-                current_node.int_count += 1
+            # Root 전체 카운트 +1
+            self.obj_root_node.int_count += 1
+
+            # 첫 번째 요소(예: "3d", "2d")를 대분류로 사용
+            str_top_category = list_categories[0].capitalize()
+
+            # 대분류 노드가 없으면 새로 생성
+            if str_top_category not in self.obj_root_node.dict_children:
+                self.obj_root_node.dict_children[str_top_category] = CategoryNode(str_top_category)
+
+            obj_top_node = self.obj_root_node.dict_children[str_top_category]
+            obj_top_node.int_count += 1
+
+            # 두 번째 요소부터는 대분류 바로 아래에 평탄하게 배치 (깊이 제한!)
+            for str_sub_category in list_categories[1:]:
+                str_display_name = str_sub_category.capitalize()
+
+                if str_display_name not in obj_top_node.dict_children:
+                    obj_top_node.dict_children[str_display_name] = CategoryNode(str_display_name)
+
+                obj_top_node.dict_children[str_display_name].int_count += 1
 
         print(f"🌲 [CategoryManager] 트리 구축 완료! (총 {self.obj_root_node.int_count}개 에셋 분류됨)")
         
