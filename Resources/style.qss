@@ -15,7 +15,7 @@ QPushButton, ScanButton {
 
 /* 마우스 올렸을 때 효과도 두 개 다 적용 */
 QPushButton:hover, ScanButton:hover {
-    background-color: #45a049;
+    background-color: #c962b8;
 }
 
 QMainWindow {

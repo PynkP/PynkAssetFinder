@@ -1,6 +1,7 @@
 # Features/RegisterWindow/register_window.py
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QLineEdit
 from PySide6.QtCore import Qt
+from Features.RegisterWindow.make_data_form import MakeDataForm # 💡 폼 수입
 
 class RegisterWindow(QDialog):
     def __init__(self, parent=None):
@@ -8,7 +9,7 @@ class RegisterWindow(QDialog):
         self.setWindowTitle("Register Data")
         
         # 창 크기 설정 (이미지 비율에 맞춰 세로로 약간 길게 잡았습니다)
-        self.setMinimumSize(400, 600) 
+        self.setMinimumSize(400, 400) 
         
         # 전체를 아우르는 메인 수직 레이아웃
         lay_main = QVBoxLayout()
@@ -28,20 +29,56 @@ class RegisterWindow(QDialog):
         lay_main.addLayout(lay_top)
         
         # ==========================================
-        # 2. 중앙: Make Data 폼이 들어갈 임시 영역 (QFrame)
+        # 2. 중앙: Make Data 폼이 들어갈 영역
         # ==========================================
         self.frm_make_data_area = QFrame()
+        self.frm_make_data_area.setObjectName("MakeDataArea") # 💡 고유 이름표 지정
         
-        # 이미지처럼 어두운 배경색을 주어 영역을 확실히 구분합니다
-        self.frm_make_data_area.setStyleSheet("background-color: #444444; border-radius: 5px;") 
+        # 💡 [핵심] 자식 위젯에 스타일이 전염되지 않도록 #MakeDataArea 에만 한정해서 스타일을 줍니다!
+        self.frm_make_data_area.setStyleSheet("#MakeDataArea { background-color: #252525; border-radius: 3px; }") 
         
-        # 프레임 내부 텍스트 레이아웃
         lay_frame = QVBoxLayout()
-        lbl_placeholder = QLabel("Make Data를 만드는 곳\n나중에 만들 UI 영역")
-        lbl_placeholder.setAlignment(Qt.AlignCenter) # 텍스트 중앙 정렬
-        lbl_placeholder.setStyleSheet("color: white; font-size: 16px;") 
+        lay_frame.setAlignment(Qt.AlignTop) # 💡 요소들을 위에서부터 차곡차곡 쌓도록 설정
         
-        lay_frame.addWidget(lbl_placeholder)
+        # 💡 [추가] Asset Name 입력 영역 (통일성 있는 디자인)
+        lay_name_row = QHBoxLayout()
+        
+        lbl_name = QLabel("Asset Name")
+        lbl_name.setMinimumWidth(80) # 아래쪽 라벨들과 동일한 너비 유지
+        
+        self.let_asset_name = QLineEdit()
+        self.let_asset_name.setPlaceholderText("에셋 이름을 입력하세요")
+        self.let_asset_name.setMinimumHeight(30)
+        
+        # 왼쪽 라벨, 오른쪽 텍스트박스 배치
+        lay_name_row.addWidget(lbl_name)
+        lay_name_row.addWidget(self.let_asset_name)
+        
+        lay_frame.addLayout(lay_name_row)
+        
+        # 💡 [추가] ID 발급 영역 (가로 배치)
+        lay_id_row = QHBoxLayout()
+        
+        self.btn_make_id = QPushButton("Make ID")
+        self.btn_make_id.setMinimumHeight(30)
+        self.btn_make_id.setMinimumWidth(80)
+        
+        self.let_id = QLineEdit()
+        self.let_id.setReadOnly(True) # 유저가 마음대로 수정해서 중복을 만들지 못하게 읽기 전용으로 설정!
+        self.let_id.setPlaceholderText("버튼을 눌러 고유 ID를 발급받으세요")
+        self.let_id.setMinimumHeight(30)
+        
+        lay_id_row.addWidget(self.btn_make_id)
+        lay_id_row.addWidget(self.let_id)
+        
+        lay_frame.addLayout(lay_id_row)
+        
+        # 💡 [추가] 동적으로 작동하는 Make Data 폼
+        self.wgt_make_data_form = MakeDataForm()
+        lay_frame.addWidget(self.wgt_make_data_form)
+        
+        lay_frame.addStretch()
+
         self.frm_make_data_area.setLayout(lay_frame)
         
         # 💡 남는 공간을 모두 중앙 영역이 차지하도록 stretch=1 옵션을 줍니다!

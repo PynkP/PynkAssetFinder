@@ -76,7 +76,9 @@ class AssetGridView(QScrollArea):
 
     def addThumbnailChunk(self, _list_chunk_data):
         for data_img in _list_chunk_data:
-            wgt_thumbnail = ThumbnailWidget(data_img.str_path_preview, data_img.str_id)
+            # 💡 [핵심 수정] 썸네일 아래 이름을 name_id 형태로 조립합니다.
+            str_display_name = f"{data_img.str_asset_name}_{data_img.str_id}"
+            wgt_thumbnail = ThumbnailWidget(data_img.str_path_preview, str_display_name)
             
             # 💡 [핵심 추가] 개별 썸네일이 눌리면 -> 그리드 뷰의 시그널로 토스(연결)해 줍니다.
             wgt_thumbnail.sig_clicked.connect(self.sig_asset_clicked.emit)

@@ -2,7 +2,7 @@
 
 import os
 from PySide6.QtCore import QThread, Signal
-from Core.Models.metadata import MetaData # 💡 우리가 만든 구조체 수입!
+from Core.Models.asset_factory import AssetFactory
 
 class FolderScanner(QThread):
     sig_finished = Signal(list)
@@ -27,18 +27,27 @@ class FolderScanner(QThread):
                         _scanDirectoryFast(obj_entry.path)
                         
                     elif obj_entry.is_file(follow_symlinks=False):
-                        # 💡 캐시 파일은 건너뛰기
-                        if "_pynk_asset_cache.json" in obj_entry.name:
-                            continue 
-
                         str_ext = os.path.splitext(obj_entry.name)[1].lower()
                         if str_ext in self.set_valid_extensions:
-                            
-                            # 💡 함수화된 로직으로 깔끔하게 장바구니에 담기!
                             if str_ext == ".json":
-                                list_info.append(self._jsonScan(obj_entry, str_ext))
+                                # 💡 파일 내용물의 앞부분만 살짝 읽어서 캐시 파일인지 확인합니다.
+                                is_cache = False
+                                try:
+                                    with open(obj_entry.path, 'r', encoding='utf-8') as f:
+                                        if "_pynk_cache_signature" in f.read(256):
+                                            is_cache = True
+                                except Exception:
+                                    pass # 읽기 실패 시 무시하고 진행
+                                    
+                                if is_cache:
+                                    continue # 서명이 발견되면 캐시이므로 스캔 건너뜀!
+                                    
+                                obj_metadata = AssetFactory.create_from_json(obj_entry.path)
                             else:
-                                list_info.append(self._imgScan(obj_entry))
+                                obj_metadata = AssetFactory.create_from_image(obj_entry.path)
+                                
+                            if obj_metadata:
+                                list_info.append(obj_metadata)
                                 
             except PermissionError:
                 pass
@@ -47,25 +56,3 @@ class FolderScanner(QThread):
         _scanDirectoryFast(self.str_directory)
         
         self.sig_finished.emit(list_info)
-
-    # ========================================================
-    # 📦 분리된 포장(Parsing) 전담 함수들
-    # ========================================================
-    def _jsonScan(self, _obj_entry, _str_ext):
-        """메가스캔 JSON 파일은 번역가를 위해 날것(Raw) 딕셔너리로 넘깁니다."""
-        return {
-            "name": _obj_entry.name,
-            "path": _obj_entry.path,
-            "ext": _str_ext
-        }
-
-    def _imgScan(self, _obj_entry):
-        """일반 이미지는 PynkAsset 구조체(MetaData)에 완벽하게 맞춰서 포장합니다."""
-        str_pure_name = os.path.splitext(_obj_entry.name)[0]
-        
-        return MetaData(
-            str_id=str_pure_name,            # 파일 이름
-            str_path_preview=_obj_entry.path,  # 파일 절대 경로
-            str_asset_type="Image",          # 고정값
-            list_categories=["2d"]           # 고정값
-        )

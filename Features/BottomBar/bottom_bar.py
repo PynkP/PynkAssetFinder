@@ -17,7 +17,7 @@ class BottomBar(QWidget):
         
 
         self.wgt_ver_info = QLabel()
-        str_version_text = "※ Version_0.4.0"
+        str_version_text = "※ Version_0.5.0"
         self.wgt_ver_info.setText(str_version_text)
         self.wgt_ver_info.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 

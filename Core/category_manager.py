@@ -25,10 +25,13 @@ class CategoryManager(QObject):
 
     def buildCategoryTree(self, _list_metadata_assets):
         """
-        창고(AssetManager)에 있는 모든 데이터를 받아서 평탄화된 트리를 구축합니다.
-        구조: Root (All) → 2D / 3D / Uncategorized → 개별 카테고리들 (1단계만)
+        창고(AssetManager)에 있는 모든 데이터를 받아서 깊이 있는 트리를 구축합니다.
+        구조: Root (All) → assetCategories 순서대로 뎁스 생성
         """
         self.clearCategories()
+        
+        # 💡 [버그 예방] 나중에 카테고리 클릭 시 필터링할 때 쓸 수 있도록 데이터를 들고 있습니다.
+        self.list_assets = _list_metadata_assets
 
         for asset in _list_metadata_assets:
             list_categories = asset.list_categories
@@ -40,29 +43,53 @@ class CategoryManager(QObject):
             # Root 전체 카운트 +1
             self.obj_root_node.int_count += 1
 
-            # 첫 번째 요소(예: "3d", "2d")를 대분류로 사용
-            str_top_category = list_categories[0].capitalize()
+            # assetCategories 순서대로 파고 내려가며 트리 구축
+            current_node = self.obj_root_node
+            for str_category_name in list_categories:
 
-            # 대분류 노드가 없으면 새로 생성
-            if str_top_category not in self.obj_root_node.dict_children:
-                self.obj_root_node.dict_children[str_top_category] = CategoryNode(str_top_category)
+                # 하위 노드가 없으면 새로 생성
+                if str_category_name not in current_node.dict_children:
+                    current_node.dict_children[str_category_name] = CategoryNode(str_category_name)
 
-            obj_top_node = self.obj_root_node.dict_children[str_top_category]
-            obj_top_node.int_count += 1
-
-            # 두 번째 요소부터는 대분류 바로 아래에 평탄하게 배치 (깊이 제한!)
-            for str_sub_category in list_categories[1:]:
-                str_display_name = str_sub_category.capitalize()
-
-                if str_display_name not in obj_top_node.dict_children:
-                    obj_top_node.dict_children[str_display_name] = CategoryNode(str_display_name)
-
-                obj_top_node.dict_children[str_display_name].int_count += 1
+                # 하위 노드로 한 칸 내려감
+                current_node = current_node.dict_children[str_category_name]
+                current_node.int_count += 1
 
         print(f"🌲 [CategoryManager] 트리 구축 완료! (총 {self.obj_root_node.int_count}개 에셋 분류됨)")
         
+        # 💡 [핵심 수정] 트리를 화면에 그리기 직전에, 모든 뎁스의 폴더들을 오름차순 정렬합니다.
+        self._sortNode(self.obj_root_node)
+        
         # 구축된 트리의 최상위(Root) 노드를 신호에 실어서 보냅니다.
         self.sig_categories_updated.emit(self.obj_root_node)
+
+    # ========================================================
+    # 💡 [신규 함수] 트리 정렬 재귀 함수
+    # ========================================================
+    def _sortNode(self, _node):
+        """노드의 자식들을 이름(알파벳 오름차순, 대소문자 무시) 기준으로 정렬합니다."""
+        # 현재 뎁스의 딕셔너리를 이름(키값) 기준으로 정렬해서 새로 끼워 넣습니다.
+        _node.dict_children = dict(sorted(_node.dict_children.items(), key=lambda item: item[0].lower()))
+        
+        # 끝까지 파고들면서 하위 뎁스의 자식들도 전부 똑같이 정렬시킵니다. (재귀)
+        for child_node in _node.dict_children.values():
+            self._sortNode(child_node)
+
+    def getChildrenOfPath(self, _list_path: list) -> list:
+        """
+        주어진 카테고리 경로(예: ["3D asset", "nature"])에 속하는
+        바로 다음 뎁스의 자식 카테고리 이름 목록을 반환합니다.
+        경로가 비어있으면 Root의 자식들을 반환합니다.
+        """
+        current_node = self.obj_root_node
+        for str_name in _list_path:
+            if str_name in current_node.dict_children:
+                current_node = current_node.dict_children[str_name]
+            else:
+                return [] # 경로가 잘못되었거나 자식이 없으면 빈 리스트 반환
+        
+        # 자식 노드들의 이름을 리스트로 반환
+        return list(current_node.dict_children.keys())
 
     def getFilteredAssets(self, _str_category_name: str) -> list:
         """

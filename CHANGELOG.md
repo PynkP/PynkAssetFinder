@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2026-06-21
+
+### Added
+- **개인 커스텀 에셋 지원:** MegaScan 에셋뿐만 아니라 개인의 에셋 데이터도 JSON으로 저장할 수 있는 기능 및 전용 UI 추가
+- 커스텀 에셋 등록 시 MegaScan과 호환되는 유사한 규격의 고유 ID 자동 생성 기능 구현
+- 메타 데이터(MetaData) 규약에 '에셋 이름(Asset Name)' 항목 추가
+
+### Changed
+- **파싱 기준 변경:** 에셋 파싱 및 프리뷰 이미지 로드 기준을 Quixel Bridge 다운로드 폴더 구조에 맞게 전면 개편
+- 썸네일 하단에 표시되는 텍스트 형식을 '에셋 이름 + ID'로 변경하고, 에셋 리스트가 기본적으로 오름차순 정렬되도록 로직 수정
+
+### Fixed
+- 카테고리 뎁스(Depth) 트리 처리 과정에서 이름 기준 오름차순 정렬이 정상적으로 적용되지 않던 버그 수정
 ## [0.4.0] - 2026-06-07
 
 ### Added

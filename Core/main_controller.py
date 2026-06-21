@@ -24,58 +24,47 @@ class MainController(QObject):
         self.ctrl_scan = ScanController(self.wgt_main, self.obj_asset_manager)
         self.ctrl_view = ViewController(self.wgt_main, self.obj_asset_manager)
         self.ctrl_cache = CacheController(self.wgt_main, self.obj_asset_manager)
-        self.ctrl_register = RegisterController(self.wgt_main, self.obj_asset_manager)
+        self.ctrl_register = RegisterController(self.wgt_main, self.obj_asset_manager, self.obj_category_manager)
 
         # 3. 부서 간 소통 연결망 구축
         self.initConnections()
 
     def initConnections(self):
-        # 💡 [핵심] 수집 팀장이 "스캔 다 끝났습니다!" 하고 신호를 보내면
-        # 사장님이 화면 팀장에게 "새로고침 해!" 라고 지시를 내립니다.
+        # 💡 1. 썸네일(그리드뷰) 갱신 신호들
         self.ctrl_scan.sig_scan_all_finished.connect(self.ctrl_view.refreshGridView)
-
-        # 💡 캐시 로드 끝 -> 화면 갱신
         self.ctrl_cache.sig_cache_loaded.connect(self.ctrl_view.refreshGridView)
-
-        # 💡 에셋 개별 등록 완료 -> 화면 갱신
         self.ctrl_register.sig_asset_registered.connect(self.ctrl_view.refreshGridView)
 
         # ==========================================
-        # 💡 2. [추가] 카테고리 트리 구축 지시
+        # 💡 2. [수정] 카테고리 트리 구축 지시 (메모리 증발을 막기 위해 정식 함수 연결!)
         # ==========================================
-        # 스캔이나 로드가 끝났을 때, 카테고리 매니저를 호출해서 트리를 갱신하라고 지시합니다.
-        # (람다를 써서 창고의 리스트를 통째로 넘겨줍니다)
-        self.ctrl_scan.sig_scan_all_finished.connect(
-            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
-        )
-        self.ctrl_cache.sig_cache_loaded.connect(
-            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
-        )
-        self.ctrl_register.sig_asset_registered.connect(
-            lambda: self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
-        )
-        # ==========================================
-        # 💡 [추가] 매니저가 "트리 완성했다!" 하고 신호를 보내면, 
-        # 화면 팀장(또는 좌측 패널)에게 "받아서 그려라!" 라고 전달합니다.
-        # ==========================================
-        # (주의: self.wgt_main.wgt_category_panel 등 실제 사용하시는 변수명에 맞게 적어주세요!)
+        self.ctrl_scan.sig_scan_all_finished.connect(self.handleRebuildCategoryTree)
+        self.ctrl_cache.sig_cache_loaded.connect(self.handleRebuildCategoryTree)
+        self.ctrl_register.sig_asset_registered.connect(self.handleRebuildCategoryTree)
+
+        # 3. 매니저가 트리 완성을 보고하면 화면에 그리도록 지시
         self.obj_category_manager.sig_categories_updated.connect(
             self.wgt_main.wgt_category_panel.updateCategoryTree
         )
 
-        # ==========================================
-        # 💡 [필터링 마법 연결] 좌측 패널 클릭 -> 사장님 호출
-        # ==========================================
-        # (wgt_category_panel 등 실제 변수명에 맞게 조정해 주세요)
+        # 4. 좌측 패널 클릭 필터링
         self.wgt_main.wgt_category_panel.sig_category_clicked.connect(self.handleCategoryFilter)
 
+    # ==========================================
+    # 💡 [신규 함수] 메모리에서 지워지지 않는 정식 전담 지시 함수
+    # ==========================================
+    def handleRebuildCategoryTree(self):
+        """에셋이 갱신되었을 때 카테고리 트리를 다시 구축하도록 매니저에게 지시합니다."""
+        print("👔 [MainController] 에셋 변동 감지! 카테고리 트리를 다시 짓습니다.")
+        self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
+
     #[신규 함수] 사장님의 필터링 지휘 전담 함수
-    def handleCategoryFilter(self, _str_category_name):
+    def handleCategoryFilter(self, _list_category_path):
         """카테고리 클릭 보고를 받고 필터링된 화면 갱신을 지시합니다."""
-        print(f"👔 [MainController] '{_str_category_name}' 필터링 지시 접수!")
+        print(f"👔 [MainController] '{_list_category_path}' 필터링 지시 접수!")
         
-        # 1. 창고장에게 해당 카테고리만 가져오라고 지시 (아까 만든 함수 사용!)
-        list_filtered = self.obj_asset_manager.getFilteredAssets(_str_category_name)
+        # 1. 창고장에게 해당 경로로 필터링해오라고 지시
+        list_filtered = self.obj_asset_manager.getFilteredAssets(_list_category_path)
         print(f"🔍 [MainController] 창고 검색 완료: 총 {len(list_filtered)}개 발견됨.")
         
         # 2. 화면 팀장에게 걸러진 리스트만 새로 그리라고 지시

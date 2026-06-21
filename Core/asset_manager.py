@@ -29,6 +29,10 @@ class AssetManager:
     def addAssets(self, _list_new_assets):
         """스캐너가 찾아온 새로운 에셋 리스트를 중앙 저장소에 추가합니다."""
         self.list_all_assets.extend(_list_new_assets)
+        
+        # 💡 [핵심 수정] 추가될 때마다 전체 에셋을 이름(asset_name) 알파벳 오름차순으로 정렬합니다.
+        # 소문자로 변환(.lower())하여 대소문자가 뒤죽박죽 섞이지 않고 깔끔하게 정렬되게 합니다.
+        self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
 
     def getAllAssets(self):
         """현재 관리 중인 모든 에셋 리스트를 반환합니다."""
@@ -57,28 +61,38 @@ class AssetManager:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str_folder_path))
         return True
     
-    def getFilteredAssets(self, _str_category_name: str) -> list:
+    def getUniqueAssetTypes(self) -> list:
+        """현재 보관 중인 에셋들의 고유한 Asset Type 목록을 반환합니다."""
+        set_types = set()
+        for asset in self.list_all_assets:
+            if hasattr(asset, 'str_asset_type') and asset.str_asset_type and asset.str_asset_type != "Unknown":
+                set_types.add(asset.str_asset_type)
+        return sorted(list(set_types))
+
+    def getFilteredAssets(self, _list_category_path: list) -> list:
         """
-        특정 카테고리 이름이 포함된 에셋만 쏙쏙 골라서 반환합니다.
+        특정 카테고리 경로와 앞부분이 완벽히 일치하는 에셋만 반환합니다.
+        (예: ["AAA", "nature"] 클릭 시, ["AAA", "nature", "rock"]은 포함되지만 ["3D asset", "nature"]는 제외)
         """
-        # 만약 최상위 "Root"를 클릭했다면? 필터링 없이 전체 데이터를 다 줍니다.
-        if _str_category_name == "Root":
+        # 만약 최상위 "Root"를 클릭했다면? (경로가 비어있음)
+        if not _list_category_path:
             return self.list_all_assets
             
         list_filtered = []
-        str_target = _str_category_name.lower() # 검색할 단어를 소문자로 통일
+        list_lower_path = [cat.lower() for cat in _list_category_path]
         
         for asset in self.list_all_assets:
             # 1. 카테고리가 아예 없는 파일들 처리 ("Uncategorized" 클릭 시)
             if not asset.list_categories:
-                if str_target == "uncategorized":
+                if len(list_lower_path) == 1 and list_lower_path[0] == "uncategorized":
                     list_filtered.append(asset)
                 continue
                 
-            # 2. 에셋이 가진 카테고리들을 전부 소문자로 바꿔서 타겟이 있는지 검사!
-            # (UI는 "Nature"지만 데이터는 "nature"일 수 있으니 안전하게 대소문자 무시)
-            list_lower_cats = [cat.lower() for cat in asset.list_categories]
-            if str_target in list_lower_cats:
-                list_filtered.append(asset)
+            # 2. 에셋이 가진 카테고리 앞부분이 클릭한 경로와 똑같은지 검사!
+            list_lower_asset_cats = [cat.lower() for cat in asset.list_categories]
+            
+            if len(list_lower_asset_cats) >= len(list_lower_path):
+                if list_lower_asset_cats[:len(list_lower_path)] == list_lower_path:
+                    list_filtered.append(asset)
                 
         return list_filtered

@@ -34,12 +34,16 @@ class CacheController(QObject):
         if not str_save_path: return 
             
         try:
-            # 💡 [핵심 변경점] 창고에 있는 MetaData 객체들을 json이 알 수 있게 딕셔너리로 변환!
             list_dict_assets = [asset.to_dict() for asset in self.obj_asset_manager.getAllAssets()]
             
+            # 💡 [핵심] 캐시 파일임을 증명하는 서명(Signature) 문구를 맨 위에 박아줍니다!
+            dict_cache_data = {
+                "_pynk_cache_signature": "this is pynk asset finder cache",
+                "assets": list_dict_assets
+            }
+            
             with open(str_save_path, 'w', encoding='utf-8') as f:
-                # 변환된 딕셔너리 리스트를 파일로 굽습니다
-                json.dump(list_dict_assets, f, indent=4, ensure_ascii=False)
+                json.dump(dict_cache_data, f, indent=4, ensure_ascii=False)
                 
             print(f"💾 [CacheController] 캐시 저장 성공: {str_save_path}")
             QMessageBox.information(self.wgt_main, "저장 완료", "캐시 데이터가 성공적으로 저장되었습니다!")
@@ -58,7 +62,15 @@ class CacheController(QObject):
             
         try:
             with open(str_load_path, 'r', encoding='utf-8') as f:
-                list_raw_data = json.load(f) # 일단 딕셔너리 리스트로 읽어옵니다
+                data = json.load(f)
+                
+            # 💡 [핵심] 서명이 있는 새 버전인지, 리스트 형태의 옛날 버전인지 판별합니다 (하위 호환성)
+            if isinstance(data, dict) and data.get("_pynk_cache_signature") == "this is pynk asset finder cache":
+                list_raw_data = data.get("assets", [])
+            elif isinstance(data, list):
+                list_raw_data = data
+            else:
+                raise Exception("유효한 Pynk Asset Finder 캐시 파일이 아닙니다.")
             
             # 💡 [핵심 변경점] 읽어온 딕셔너리들을 다시 완벽한 MetaData 구조체로 해동(조립)합니다!
             # (** 문법을 쓰면 딕셔너리의 키워드를 구조체에 쏙쏙 알아서 매칭해 줍니다)
