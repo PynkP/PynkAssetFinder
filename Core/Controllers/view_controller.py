@@ -18,14 +18,12 @@ class ViewController(QObject):
 
     def refreshGridView(self, _list_all_assets=None):
         """사장님이 화면을 갱신하라고 지시할 때 호출됩니다."""
-        obj_grid_view = self.wgt_main.wgt_main_panel.getGridView()
-        obj_grid_view.clearGrid() # 화면 싹 비우기!
-        
         # 💡 [핵심] 사장님이 특정 리스트를 넘겨줬으면 그걸 쓰고, 아니면 창고 전체 털어오기!
         list_target = _list_all_assets if _list_all_assets is not None else self.obj_asset_manager.getAllAssets()
         
-        if list_target:
-            obj_grid_view.addThumbnailChunk(list_target)
+        # 💡 이전처럼 한 번에 다 그려서 UI가 멈추는 것을 방지하기 위해 로더(ThumbnailLoader)에게 넘깁니다!
+        # 로더가 알아서 기존 그리드를 비우고(clearGrid) 청크 단위로 나누어서 천천히 그리라고 지시합니다.
+        self.wgt_main.obj_chunk_loader.reloadAssets(list_target)
 
     def handleAssetClicked(self, _str_path):
         """썸네일이 클릭되었을 때의 액션을 처리합니다."""

@@ -100,8 +100,11 @@ class RegisterController(QObject):
             return
             
         # 2. AssetFactory 규격에 맞게 JSON 중첩 딕셔너리 조립
-        str_asset_type = dict_data.get("asset_type")
-        list_categories = dict_data.get("categories", [])
+        str_raw_type = dict_data.get("asset_type", "")
+        str_asset_type = str_raw_type.capitalize() if str_raw_type else ""
+        
+        list_raw_categories = dict_data.get("categories", [])
+        list_categories = [cat.capitalize() if cat else cat for cat in list_raw_categories]
         
         # 💡 [핵심 수정] Asset Type을 카테고리에 억지로 끼워넣지 않고, 순수하게 추가한 태그들만 사용합니다!
         list_full_path = list_categories

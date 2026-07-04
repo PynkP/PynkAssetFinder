@@ -1,0 +1,6 @@
+/* Resources/Styles/topbar_style.qss */
+
+/* TopBar 전용 배경색 */
+TopBar {
+    background-color: rgb(40, 40, 40);
+}

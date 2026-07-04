@@ -11,11 +11,11 @@ class CategoryPanel(QWidget):
 
     def __init__(self):
         super().__init__()
-        # 💡 [삭제] self.setStyleSheet("background-color: rgb(40, 40, 40); color: white;")
-        
-        # 💡 [추가] QSS에서 콕 집어내기 위해 고유 이름표 달기
-        self.setObjectName("CategoryPanel") 
-        
+
+        # ✅ QWidget 커스텀 클래스가 QSS 배경색을 정상적으로 받도록 속성 활성화
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setObjectName("CategoryPanel")
+
         self.initUI()
         self.initConnections()
 
@@ -59,7 +59,8 @@ class CategoryPanel(QWidget):
             item_top = QTreeWidgetItem(item_root)
             self._buildTreeItem(item_top, obj_child_node)
 
-        self.wgt_tree.expandAll()
+        # 💡 [핵심 수정] 뎁스 2까지만 확장 (3뎁스 자식들까지만 보이도록)
+        self.wgt_tree.expandToDepth(1)
 
     def _buildTreeItem(self, _item_ui, _node_data):
         """

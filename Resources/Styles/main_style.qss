@@ -1,0 +1,39 @@
+/* Resources/Styles/main_style.qss */
+
+/* =====================================================
+   1. 전역 기본값 (가장 먼저 - 모든 위젯의 기본 배경)
+   ===================================================== */
+QWidget, QFrame {
+    background-color: rgb(20, 20, 20);
+    color: white;
+}
+
+QLabel {
+    background-color: transparent;
+}
+
+/* =====================================================
+   2. 개별 위젯 커스텀 (전역값을 덮어씌움)
+   ===================================================== */
+
+/* 공통 버튼 디자인 */
+QPushButton, ScanButton {
+    background-color: rgb(35, 35, 35);
+    color: white;
+    border-radius: 3px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    font-family: "맑은 고딕"; 
+}
+
+/* 마우스 올렸을 때 효과 */
+QPushButton:hover, ScanButton:hover {
+    background-color: #c962b8;
+}
+
+/* 메인 윈도우 공통 배경색 */
+QMainWindow {
+    background-color: rgb(20, 20, 20);
+    color: white;
+}

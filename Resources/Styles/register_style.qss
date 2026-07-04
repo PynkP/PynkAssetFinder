@@ -1,0 +1,6 @@
+/* Resources/Styles/register_style.qss */
+
+#MakeDataArea {
+    background-color: rgb(37, 37, 37);
+    border-radius: 3px;
+}

@@ -31,7 +31,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Pynk Asset Finder")
-        self.resize(1200, 800)
+        self.setMinimumWidth(1280)  # ✅ 최소 너비 1280 고정
+        self.setMinimumHeight(400)
+        self.resize(1280, 800)
 
         self.setWindowIcon(QIcon(resource_path("Resources/icons/app_icon.ico")))
 
@@ -45,7 +47,9 @@ class MainWindow(QMainWindow):
         # 로더가 소리치면(Signal), 그리드 뷰가 행동(Slot)하도록 직통 전화선 연결!
         self.obj_chunk_loader.sig_clear_requested.connect(obj_grid_view.clearGrid)
         self.obj_chunk_loader.sig_chunk_ready.connect(obj_grid_view.addThumbnailChunk)
-        # (필요하다면 sig_load_completed 도 연결할 수 있습니다)
+        
+        # 💡 [추가] 무한 스크롤 연동! 스크롤이 바닥에 닿으면 로더에게 다음 청크를 가져오라고 지시
+        obj_grid_view.sig_scroll_bottom_reached.connect(self.obj_chunk_loader.loadNextChunk)
         
         # 3. 컨트롤러 고용
         self.obj_controller = MainController(_wgt_main=self)
@@ -99,14 +103,26 @@ if __name__ == "__main__":
     # 💡 [수정 2] 프로그램 전체 아이콘에도 resource_path 마법 적용!
     app.setWindowIcon(QIcon(resource_path("Resources/icons/app_icon.ico")))
 
-    # 💡 [수정 3] 스타일 시트(QSS) 경로에도 resource_path 마법 적용!
-    str_qss_path = resource_path("Resources/style.qss")
-    if os.path.exists(str_qss_path):
-        with open(str_qss_path, "r", encoding="utf-8") as f:
-            app.setStyleSheet(f.read())
-            print("🎨 스타일 시트 로드 완료!")
-    else:
-        print("⚠️ 경고: Resources/style.qss 파일을 찾을 수 없습니다.")
+    # 💡 [수정 3] 기능별로 나뉜 여러 개의 스타일 시트를 차례대로 읽어 합칩니다.
+    list_qss_files = [
+        "Resources/Styles/main_style.qss",
+        "Resources/Styles/topbar_style.qss",
+        "Resources/Styles/category_style.qss",
+        "Resources/Styles/thumbnail_style.qss",
+        "Resources/Styles/register_style.qss",
+    ]
+
+    str_combined_qss = ""
+    for str_file in list_qss_files:
+        str_qss_path = resource_path(str_file)
+        if os.path.exists(str_qss_path):
+            with open(str_qss_path, "r", encoding="utf-8") as f:
+                str_combined_qss += f.read() + "\n"
+        else:
+            print(f"⚠️ 경고: {str_file} 파일을 찾을 수 없습니다.")
+
+    app.setStyleSheet(str_combined_qss)
+    print("🎨 분할된 스타일 시트 로드 및 병합 완료!")
 
     # 2. 메인 윈도우 실행
     window = MainWindow()

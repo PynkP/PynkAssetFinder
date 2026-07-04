@@ -1,0 +1,6 @@
+/* Resources/Styles/thumbnail_style.qss */
+
+/* 메인 패널 배경색 */
+MainPanel {
+    background-color: rgb(30, 30, 30);
+}

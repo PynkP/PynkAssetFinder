@@ -13,6 +13,11 @@ class MetaData:
     str_asset_type: str         # 에셋 타입 ("Image" 또는 json의 "asset_type" 값)
     str_asset_name: str = "Unknown" # 💡 새로 추가된 자산 이름
     list_categories: list = field(default_factory=list) # 카테고리 (기본값은 빈 리스트)
+
+    def __post_init__(self):
+        # ✅ [최적화 A] 필터링용 소문자 카테고리를 로드 시점에 미리 캐싱
+        # → 카테고리 클릭 때마다 소문자 변환을 반복하지 않아도 됩니다.
+        self.list_categories_lower = [cat.lower() for cat in self.list_categories]
     
     # 💡 [꿀팁] 나중에 CacheController에서 JSON으로 얼릴(Save) 때 쓰기 위한 변환 함수
     def to_dict(self) -> dict:

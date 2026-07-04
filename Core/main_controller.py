@@ -9,6 +9,7 @@ from Core.Controllers.scan_controller import ScanController
 from Core.Controllers.view_controller import ViewController
 from Core.Controllers.cache_controller import CacheController # 💡 신규 채용!
 from Features.RegisterWindow.register_controller import RegisterController
+from Features.SearchBar.search_controller import SearchController
 
 class MainController(QObject):
     """최상위 지휘관: 팀장들을 고용하고, 부서 간의 소통 창구만 연결해 줍니다."""
@@ -25,6 +26,7 @@ class MainController(QObject):
         self.ctrl_view = ViewController(self.wgt_main, self.obj_asset_manager)
         self.ctrl_cache = CacheController(self.wgt_main, self.obj_asset_manager)
         self.ctrl_register = RegisterController(self.wgt_main, self.obj_asset_manager, self.obj_category_manager)
+        self.ctrl_search = SearchController(self.wgt_main.wgt_top_bar.wgt_search, self.obj_asset_manager)
 
         # 3. 부서 간 소통 연결망 구축
         self.initConnections()
@@ -34,6 +36,7 @@ class MainController(QObject):
         self.ctrl_scan.sig_scan_all_finished.connect(self.ctrl_view.refreshGridView)
         self.ctrl_cache.sig_cache_loaded.connect(self.ctrl_view.refreshGridView)
         self.ctrl_register.sig_asset_registered.connect(self.ctrl_view.refreshGridView)
+        self.ctrl_search.sig_search_completed.connect(self.ctrl_view.refreshGridView)
 
         # ==========================================
         # 💡 2. [수정] 카테고리 트리 구축 지시 (메모리 증발을 막기 위해 정식 함수 연결!)

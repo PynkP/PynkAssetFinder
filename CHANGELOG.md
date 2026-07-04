@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+
+## [0.6.0] - 2026-07-04
+
+### Added
+- 에셋 검색 기능 추가
+
+### Changed
+- 썸네일 이미지 로드 속도 최적화 및 개선
+- 전반적인 UI 스타일 개선
+
 ## [0.5.0] - 2026-06-21
 
 ### Added

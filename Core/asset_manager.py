@@ -23,16 +23,19 @@ class AssetManager:
             # 전체 에셋을 관리할 중앙 리스트
             self.list_all_assets = []
             
+            # 💡 [신규 추가] 현재 사용자가 선택한 카테고리 경로를 기억하는 변수
+            self.list_current_category_path = [] 
+            
             # 초기화 완료 처리
             self.bool_initialized = True
 
-    def addAssets(self, _list_new_assets):
+    def addAssets(self, _list_new_assets, _already_sorted=False):
         """스캐너가 찾아온 새로운 에셋 리스트를 중앙 저장소에 추가합니다."""
         self.list_all_assets.extend(_list_new_assets)
         
-        # 💡 [핵심 수정] 추가될 때마다 전체 에셋을 이름(asset_name) 알파벳 오름차순으로 정렬합니다.
-        # 소문자로 변환(.lower())하여 대소문자가 뒤죽박죽 섞이지 않고 깔끔하게 정렬되게 합니다.
-        self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
+        # ✅ 이미 정렬된 데이터(캐시 로드 시)는 정렬 생략
+        if not _already_sorted:
+            self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
 
     def getAllAssets(self):
         """현재 관리 중인 모든 에셋 리스트를 반환합니다."""
@@ -74,25 +77,61 @@ class AssetManager:
         특정 카테고리 경로와 앞부분이 완벽히 일치하는 에셋만 반환합니다.
         (예: ["AAA", "nature"] 클릭 시, ["AAA", "nature", "rock"]은 포함되지만 ["3D asset", "nature"]는 제외)
         """
+        # 💡 [추가] 방금 클릭한 카테고리 경로를 기억해둡니다! (검색할 때 사용)
+        self.list_current_category_path = _list_category_path
+        
         # 만약 최상위 "Root"를 클릭했다면? (경로가 비어있음)
         if not _list_category_path:
             return self.list_all_assets
             
         list_filtered = []
+        # ✅ [최적화 A] 검색 경로만 소문자로 변환 (에셋 측은 미리 캐싱된 값 사용)
         list_lower_path = [cat.lower() for cat in _list_category_path]
+        int_path_len = len(list_lower_path)
         
         for asset in self.list_all_assets:
             # 1. 카테고리가 아예 없는 파일들 처리 ("Uncategorized" 클릭 시)
             if not asset.list_categories:
-                if len(list_lower_path) == 1 and list_lower_path[0] == "uncategorized":
+                if int_path_len == 1 and list_lower_path[0] == "uncategorized":
                     list_filtered.append(asset)
                 continue
                 
-            # 2. 에셋이 가진 카테고리 앞부분이 클릭한 경로와 똑같은지 검사!
-            list_lower_asset_cats = [cat.lower() for cat in asset.list_categories]
-            
-            if len(list_lower_asset_cats) >= len(list_lower_path):
-                if list_lower_asset_cats[:len(list_lower_path)] == list_lower_path:
+            # 2. 미리 캐싱된 소문자 카테고리로 바로 비교 (변환 비용 없음)
+            if len(asset.list_categories_lower) >= int_path_len:
+                if asset.list_categories_lower[:int_path_len] == list_lower_path:
                     list_filtered.append(asset)
                 
         return list_filtered
+
+    # ==========================================
+    # 💡 [신규 추가] 검색 필터링 함수
+    # ==========================================
+    def searchAssets(self, _str_keyword):
+        """현재 선택된 카테고리 내에서 키워드가 포함된 에셋을 필터링하여 반환합니다."""
+        
+        # 💡 [핵심 변경] 전체 에셋이 아닌, '현재 선택된 카테고리의 에셋들'만 먼저 가져옵니다.
+        list_base_assets = self.getFilteredAssets(self.list_current_category_path)
+        
+        if not _str_keyword:
+            return list_base_assets # 검색어가 없으면 현재 카테고리 전체 반환
+            
+        list_result = []
+        str_lower_keyword = _str_keyword.lower()
+        
+        # 💡 [핵심 변경] list_all_assets 대신 list_base_assets 안에서만 검색합니다!
+        for asset in list_base_assets:
+            # 1. 이름 또는 ID에서 검색
+            str_name = asset.str_asset_name.lower()
+            str_id = asset.str_id.lower()
+            
+            if (str_lower_keyword in str_name) or (str_lower_keyword in str_id):
+                list_result.append(asset)
+                continue
+                
+            # 2. 태그(카테고리 경로)에서 검색
+            for str_tag in asset.list_categories_lower:
+                if str_lower_keyword in str_tag:
+                    list_result.append(asset)
+                    break # 이 에셋은 중복 추가되지 않도록 루프 탈출
+                    
+        return list_result

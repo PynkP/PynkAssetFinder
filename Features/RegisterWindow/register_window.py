@@ -34,9 +34,6 @@ class RegisterWindow(QDialog):
         self.frm_make_data_area = QFrame()
         self.frm_make_data_area.setObjectName("MakeDataArea") # 💡 고유 이름표 지정
         
-        # 💡 [핵심] 자식 위젯에 스타일이 전염되지 않도록 #MakeDataArea 에만 한정해서 스타일을 줍니다!
-        self.frm_make_data_area.setStyleSheet("#MakeDataArea { background-color: #252525; border-radius: 3px; }") 
-        
         lay_frame = QVBoxLayout()
         lay_frame.setAlignment(Qt.AlignTop) # 💡 요소들을 위에서부터 차곡차곡 쌓도록 설정
         
