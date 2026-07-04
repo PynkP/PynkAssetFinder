@@ -55,7 +55,7 @@ class AssetFactory:
             )
             
         except Exception as e:
-            print(f"❌ [AssetFactory] JSON 분석 에러: {e}")
+            print(f"❌ [AssetFactory] {str_folder_path} \ {str_filename} JSON 분석 에러: {e}")
             return None
 
     @staticmethod

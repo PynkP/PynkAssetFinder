@@ -37,6 +37,24 @@ class AssetManager:
         if not _already_sorted:
             self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
 
+    def addUniqueAssets(self, _list_new_assets):
+        """스캐너가 찾아온 새로운 에셋 중 중복된 ID를 걸러내고 중앙 저장소에 추가합니다."""
+        # 기존 ID들을 Set으로 만들어서 O(1) 속도로 중복 검사를 진행합니다.
+        set_existing_ids = {asset.str_id for asset in self.list_all_assets}
+        list_filtered_assets = []
+        
+        for asset in _list_new_assets:
+            if asset.str_id not in set_existing_ids:
+                list_filtered_assets.append(asset)
+                set_existing_ids.add(asset.str_id) # 새 에셋 더미 안에서 중복이 발생할 경우도 방어
+                
+        self.list_all_assets.extend(list_filtered_assets)
+        # 새로 들어온 데이터가 있으니 다시 정렬해 줍니다.
+        self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
+        
+        # 몇 개가 새로 추가되었는지 반환해주면 로깅하기 편합니다.
+        return len(list_filtered_assets)
+
     def getAllAssets(self):
         """현재 관리 중인 모든 에셋 리스트를 반환합니다."""
         return self.list_all_assets

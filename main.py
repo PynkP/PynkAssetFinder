@@ -11,6 +11,7 @@ from Features.CategoryView.category_panel import CategoryPanel
 from Features.ThumbnailView.main_panel import MainPanel
 from Features.ThumbnailView.thumbnail_loader import ThumbnailLoader 
 from Features.BottomBar.bottom_bar import BottomBar
+from Features.LogView.log_window import LogWindow
 
 from Core.main_controller import MainController
 
@@ -30,6 +31,10 @@ def resource_path(relative_path):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        # 💡 프로그램 시작과 동시에 로그 창을 생성하여 백그라운드 수집을 시작합니다.
+        self.wgt_log_window = LogWindow(self)
+        
         self.setWindowTitle("Pynk Asset Finder")
         self.setMinimumWidth(1280)  # ✅ 최소 너비 1280 고정
         self.setMinimumHeight(400)
@@ -78,6 +83,10 @@ class MainWindow(QMainWindow):
         
         # 💡 2. 가장 마지막(화면 맨 아래)에 바텀 바를 장착합니다!
         self.wgt_bottom_bar = BottomBar()
+        
+        # 💡 바텀 바의 로그 버튼 클릭 시그널을 로그 창 띄우기와 연결합니다.
+        self.wgt_bottom_bar.sig_log_clicked.connect(self.wgt_log_window.show)
+        
         lay_main.addWidget(self.wgt_bottom_bar)
         
         wgt_central.setLayout(lay_main)
@@ -110,6 +119,7 @@ if __name__ == "__main__":
         "Resources/Styles/category_style.qss",
         "Resources/Styles/thumbnail_style.qss",
         "Resources/Styles/register_style.qss",
+        "Resources/Styles/bottombar_style.qss",
     ]
 
     str_combined_qss = ""

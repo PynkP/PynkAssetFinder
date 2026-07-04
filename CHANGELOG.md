@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] - 2026-07-05
+
+### Added
+- 기존 데이터에 이어서 스캔할 수 있는 '추가 스캔' 기능 제작 및 적용
+- 하단바(Bottom Bar)에 작업 내역을 확인할 수 있는 '로그 페이지' 추가
+- 하단바에 프로그램 사용 방법 및 설명을 확인할 수 있는 'URL 링크' 추가
+
+### Changed
+- 전반적인 UI 스타일 및 디자인 개선
 
 ## [0.6.0] - 2026-07-04
 

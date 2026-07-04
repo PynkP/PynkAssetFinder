@@ -21,12 +21,15 @@ class TopBar(QFrame):
         # ==========================================
         # 💡 크기 및 폰트 키우기
         self.btn_scan_mega = ScanButton("Scan Mega Assets")
-
         self.btn_scan_mega.setMinimumHeight(35) 
         self.btn_scan_mega.setMinimumWidth(120)
-
-
         lay_main.addWidget(self.btn_scan_mega)
+
+        # 💡 [신규] Add Scan 버튼 추가 (기존 ScanButton 클래스 재활용!)
+        self.btn_add_scan = ScanButton("Add Scan")
+        self.btn_add_scan.setMinimumHeight(35)
+        self.btn_add_scan.setMinimumWidth(100)
+        lay_main.addWidget(self.btn_add_scan)
 
         # 💡 [핵심 추가] 양쪽에 스프링(Stretch)을 달아 검색창을 중앙에 배치합니다.
         lay_main.addStretch() 
