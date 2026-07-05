@@ -82,6 +82,15 @@ class AssetManager:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str_folder_path))
         return True
     
+    def deleteAssetById(self, _str_id):
+        """주어진 ID를 가진 에셋을 관리 리스트에서 찾아 삭제합니다."""
+        for asset in self.list_all_assets:
+            if asset.str_id == _str_id:
+                self.list_all_assets.remove(asset)
+                print(f"🗑️ [AssetManager] 에셋 삭제 완료 (ID: {_str_id})")
+                return True
+        return False
+
     def getUniqueAssetTypes(self) -> list:
         """현재 보관 중인 에셋들의 고유한 Asset Type 목록을 반환합니다."""
         set_types = set()

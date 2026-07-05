@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] - 2026-07-05
+
+### Added
+- **우클릭 컨텍스트 메뉴(Context Menu) 추가**
+  - **파일 찾기:** 선택한 에셋의 실제 파일 경로를 탐색기로 열어주는 기능 구현
+  - **리스트 삭제하기:** 목록에서 선택한 에셋을 제거하는 기능 구현
+
 ## [0.7.0] - 2026-07-05
 
 ### Added

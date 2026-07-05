@@ -53,6 +53,9 @@ class MainController(QObject):
         # 4. 좌측 패널 클릭 필터링
         self.wgt_main.wgt_category_panel.sig_category_clicked.connect(self.handleCategoryFilter)
 
+        # 💡 [추가] 뷰 컨트롤러에서 삭제되었다는 신호를 받으면 화면 갱신
+        self.ctrl_view.sig_asset_deleted.connect(self.handleAssetDeleted)
+
     # ==========================================
     # 💡 [신규 함수] 메모리에서 지워지지 않는 정식 전담 지시 함수
     # ==========================================
@@ -60,6 +63,15 @@ class MainController(QObject):
         """에셋이 갱신되었을 때 카테고리 트리를 다시 구축하도록 매니저에게 지시합니다."""
         print("👔 [MainController] 에셋 변동 감지! 카테고리 트리를 다시 짓습니다.")
         self.obj_category_manager.buildCategoryTree(self.obj_asset_manager.getAllAssets())
+
+    def handleAssetDeleted(self):
+        """에셋이 리스트에서 삭제되었을 때 후속 조치를 합니다."""
+        # 1. 카테고리 트리 재구축 (해당 에셋이 속했던 카테고리가 비어버렸을 수도 있으므로)
+        self.handleRebuildCategoryTree()
+        
+        # 2. 현재 선택된 카테고리를 기준으로 화면(그리드 뷰) 갱신
+        list_filtered = self.obj_asset_manager.getFilteredAssets(self.obj_asset_manager.list_current_category_path)
+        self.ctrl_view.refreshGridView(list_filtered)
 
     #[신규 함수] 사장님의 필터링 지휘 전담 함수
     def handleCategoryFilter(self, _list_category_path):

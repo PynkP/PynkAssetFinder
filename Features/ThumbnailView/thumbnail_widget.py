@@ -28,12 +28,15 @@ class ThumbnailWidget(QFrame):
             border-radius: 5px;
         }
     """
-    sig_clicked = Signal(str)
 
-    def __init__(self, _str_path, _str_name):
+    sig_clicked = Signal(str)
+    sig_right_clicked = Signal(str, str, object) # (str_id, str_file_path, 마우스좌표)
+
+    def __init__(self, _str_path, _str_name, _str_id):
         super().__init__()
         self.str_file_path = _str_path
         self.str_file_name = _str_name
+        self.str_id = _str_id
         # ✅ [Lazy Loading] 이미지 로드 여부 상태 플래그
         self.bool_image_loaded = False
 
@@ -114,7 +117,7 @@ class ThumbnailWidget(QFrame):
         self.bool_image_loaded = True
 
     # ==========================================
-    # 🖱️ [마우스 이벤트 처리 구역] 
+    # 🖱️ [마우스 및 컨텍스트 메뉴 이벤트 처리 구역] 
     # ==========================================
     def enterEvent(self, _event):
         """마우스 커서가 썸네일 영역 안으로 들어왔을 때 (Hover 효과 켜기)"""
@@ -127,7 +130,11 @@ class ThumbnailWidget(QFrame):
         super().leaveEvent(_event)
 
     def mousePressEvent(self, _event):
-        """마우스로 썸네일을 클릭했을 때"""
+        """마우스로 썸네일을 좌클릭했을 때"""
         if _event.button() == Qt.LeftButton:
             self.sig_clicked.emit(self.str_file_path)
         super().mousePressEvent(_event)
+
+    def contextMenuEvent(self, _event):
+        """마우스 우클릭 시 우클릭 신호를 부모에게 전달합니다."""
+        self.sig_right_clicked.emit(self.str_id, self.str_file_path, _event.globalPos())
