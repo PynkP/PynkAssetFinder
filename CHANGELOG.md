@@ -4,6 +4,63 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] - 2026-07-11
+
+### Added
+- **단축키(Shortcuts) 기능 추가:** 작업 효율성을 높이기 위한 주요 기능 단축키 지원
+- **썸네일 경로 탐색 예외 처리:** 썸네일 이미지 경로를 찾지 못할 경우, JSON 데이터를 참조하여 경로를 재탐색하는 폴백(Fallback) 예외 처리 로직 추가
+
+### Changed
+- **폴더 트리 구조 리팩토링:** 단일 책임 원칙(SRP, Single Responsibility Principle)에 기반하여 각 기능(Feature)별로 디렉토리 구조를 분류 및 재정리
+- **썸네일 지원 포맷 및 UI 개선:**
+  - 기존 PNG 형식만 허용되던 썸네일 로드 기능을 JPG 등 일반적인 이미지 포맷 전반을 지원하도록 유연성 개선
+  - 썸네일 이미지 표시 위치 및 레이아웃 조정
+- **Register Make Data 규격 수정:** 에셋 데이터 생성 시 고유 ID 항목도 함께 포함되어 처리되도록 로직 수정
+
+📦 PynkAssetFinder
+ ┣ 📜 main.py
+ ┣ 📂 Core                         ← 전역 공용 인프라
+ ┃ ┣ 📜 app_controller.py          ← (구: main_controller.py)
+ ┃ ┣ 📂 Models
+ ┃ ┃ ┣ 📜 metadata.py              ← 위치 유지 (공유 데이터 규약)
+ ┃ ┃ ┗ 📜 asset_factory.py         ← 위치 유지 (공유 데이터 규약)
+ ┃ ┣ 📂 Repositories
+ ┃ ┃ ┗ 📜 asset_manager.py         ← (구: Core/asset_manager.py)
+ ┃ ┣ 📂 FileSystem
+ ┃ ┃ ┗ 📜 folder_scanner.py        ← (구: Core/folder_scanner.py)
+ ┃ ┗ 📂 Utils
+ ┃   ┗ 📜 id_manager.py            ← (구: Core/id_manager.py)
+ ┣ 📂 Features
+ ┃ ┣ 📂 AssetBrowse                ← (구: ThumbnailView + Core/Controllers/view_controller)
+ ┃ ┃ ┣ 📜 view_controller.py
+ ┃ ┃ ┣ 📜 asset_grid_view.py
+ ┃ ┃ ┣ 📜 asset_context_menu.py
+ ┃ ┃ ┣ 📜 thumbnail_loader.py
+ ┃ ┃ ┣ 📜 thumbnail_widget.py
+ ┃ ┃ ┗ 📜 main_panel.py
+ ┃ ┣ 📂 Scan                       ← (구: Core/Controllers/scan_controller)
+ ┃ ┃ ┗ 📜 scan_controller.py
+ ┃ ┣ 📂 Cache                      ← (구: Core/Controllers/cache_controller)
+ ┃ ┃ ┗ 📜 cache_controller.py
+ ┃ ┣ 📂 Category                   ← (구: CategoryView + Core/category_manager)
+ ┃ ┃ ┣ 📜 category_manager.py
+ ┃ ┃ ┗ 📜 category_panel.py
+ ┃ ┣ 📂 Search                     ← (구: SearchBar)
+ ┃ ┃ ┣ 📜 search_bar.py
+ ┃ ┃ ┗ 📜 search_controller.py
+ ┃ ┣ 📂 Register                   ← (구: RegisterWindow)
+ ┃ ┃ ┣ 📜 register_controller.py
+ ┃ ┃ ┣ 📜 register_window.py
+ ┃ ┃ ┣ 📜 make_data_controller.py
+ ┃ ┃ ┣ 📜 make_data_form.py
+ ┃ ┃ ┗ 📜 category_tag.py
+ ┃ ┗ 📂 SharedUI                   ← (구: TopMenu + BottomBar + LogView)
+ ┃   ┣ 📜 top_bar.py
+ ┃   ┣ 📜 scan_button.py
+ ┃   ┣ 📜 bottom_bar.py
+ ┃   ┗ 📜 log_window.py
+ ┗ 📂 Resources                    ← 변경 없음
+
 ## [0.8.0] - 2026-07-05
 
 ### Added
