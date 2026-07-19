@@ -21,6 +21,7 @@ class AssetGridView(QScrollArea):
     # 썸네일 중 하나가 클릭되었을 때 발생시킬 신호 (외부 컨트롤러가 받음)
     sig_asset_clicked = Signal(str, str)
     sig_asset_right_clicked = Signal(str, str, object) # 우클릭 시 컨트롤러에게 전달
+    sig_asset_favorite_clicked = Signal(str) # 💡 하트 클릭 신호 추가
     # 💡 [추가] 스크롤이 바닥에 닿았을 때 로더에게 다음 청크를 요구하는 시그널
     sig_scroll_bottom_reached = Signal()
     
@@ -89,9 +90,10 @@ class AssetGridView(QScrollArea):
     def addThumbnailChunk(self, _list_chunk_data):
         for data_img in _list_chunk_data:
             str_display_name = f"{data_img.str_asset_name}_{data_img.str_id}"
-            wgt_thumbnail = ThumbnailWidget(data_img.str_path_preview, str_display_name, data_img.str_id)
+            wgt_thumbnail = ThumbnailWidget(data_img.str_path_preview, str_display_name, data_img.str_id, data_img.bool_favorite)
             wgt_thumbnail.sig_clicked.connect(self.sig_asset_clicked.emit)
             wgt_thumbnail.sig_right_clicked.connect(self.sig_asset_right_clicked.emit)
+            wgt_thumbnail.sig_favorite_clicked.connect(self.sig_asset_favorite_clicked.emit)
             self.list_thumb_widgets.append(wgt_thumbnail)
 
         self.rearrangeGrid()

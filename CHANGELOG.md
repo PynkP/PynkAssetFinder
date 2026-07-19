@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0] - 2026-07-19
+
+### Added
+- **즐겨찾기(Favorites) 기능 추가:** 자주 사용하는 에셋을 따로 관리하고 빠르게 접근할 수 있는 즐겨찾기 시스템 도입
+- **에셋 데이터 수정(Edit) 기능 추가:** 기존에 등록된 에셋의 정보를 수정할 수 있는 기능 지원
+- **즐겨찾기 메타 데이터 추가:** 즐겨찾기 상태를 저장 및 관리하기 위한 표준 메타 데이터 규약 항목 추가
+
+### Changed
+- **Register Data 사용자 편의성(UX) 개선:** 에셋 등록 시 썸네일 이미지를 드래그 앤 드롭(Drag & Drop)으로 간편하게 등록할 수 있도록 개선
+- **즐겨찾기 기능 도입에 따른 UI/UX 개편:**
+  - 좌측 사이드바(Left UI) 패널에 즐겨찾기 탭 및 필터링 레이아웃 적용
+  - 썸네일 아이템에 즐겨찾기 여부를 표시하고 설정할 수 있는 UI 요소 추가
+
 ## [0.9.0] - 2026-07-11
 
 ### Added

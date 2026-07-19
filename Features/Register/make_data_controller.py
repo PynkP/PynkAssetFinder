@@ -95,8 +95,10 @@ class MakeDataController(QObject):
             str_asset_type = self.wgt_form.let_asset_type.text().strip()
             
         list_categories = self.list_current_category_path.copy()
+        str_thumbnail_path = self.wgt_form.lbl_thumbnail.str_thumbnail_path
         
         return {
             "asset_type": str_asset_type,
-            "categories": list_categories
+            "categories": list_categories,
+            "thumbnail_path": str_thumbnail_path
         }

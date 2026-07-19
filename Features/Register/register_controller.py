@@ -2,6 +2,7 @@
 
 import os
 import json
+import shutil
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from Features.Register.register_window import RegisterWindow           # 💡 새 경로
@@ -34,11 +35,11 @@ class RegisterController(QObject):
             # 2. RegisterWindow 내부의 Load Data 버튼 연결
             self.dialog_register.btn_load_data.clicked.connect(self.handleLoadData)
             
-            # 💡 [추가] Make ID 버튼에 기능 연결!
-            self.dialog_register.btn_make_id.clicked.connect(self.handleMakeId)
+            # 💡 [추가] Make ID 버튼에 기능 연결! (UI 응집도 개선 반영)
+            self.dialog_register.wgt_make_data_form.sig_make_id_clicked.connect(self.handleMakeId)
             
             # 💡 [신규 연결] Asset Name을 칠 때마다 즉각 폴더명을 갱신합니다!
-            self.dialog_register.let_asset_name.textChanged.connect(self.handleAssetNameChanged)
+            self.dialog_register.wgt_make_data_form.let_asset_name.textChanged.connect(self.handleAssetNameChanged)
             
             # 💡 [추가] Make Data 하위 컨트롤러 생성 및 연결!
             self.ctrl_make_data = MakeDataController(
@@ -61,17 +62,17 @@ class RegisterController(QObject):
         str_new_id = IDManager.generate_unique_ids(list_existing_ids)
         
         # 3. 텍스트 창에 예쁘게 표시!
-        self.dialog_register.let_id.setText(str_new_id)
+        self.dialog_register.wgt_make_data_form.let_id.setText(str_new_id)
         
         # 4. 💡 Make ID 버튼을 눌렀을 때 비로소 폼의 콤보박스 데이터들을 최신으로 갱신합니다!
         if self.ctrl_make_data:
             self.ctrl_make_data.refreshUIState()
-            str_asset_name = self.dialog_register.let_asset_name.text().strip()
+            str_asset_name = self.dialog_register.wgt_make_data_form.let_asset_name.text().strip()
             self.ctrl_make_data.wgt_form.setPreviewNames(str_new_id, str_asset_name)
 
     def handleAssetNameChanged(self, str_text):
         if not self.ctrl_make_data: return
-        str_id = self.dialog_register.let_id.text().strip()
+        str_id = self.dialog_register.wgt_make_data_form.let_id.text().strip()
         if str_id:
             self.ctrl_make_data.wgt_form.setPreviewNames(str_id, str_text.strip())
 
@@ -79,26 +80,39 @@ class RegisterController(QObject):
         """Make Data 버튼 클릭 시 JSON 파일로 저장합니다."""
         if not self.ctrl_make_data: return
         
-        # 💡 ID는 RegisterWindow 소속이므로 직접 가져옵니다.
-        str_id = self.dialog_register.let_id.text().strip()
+        # 💡 ID가 MakeDataForm 소속으로 변경되어 접근 경로를 수정합니다.
+        str_id = self.dialog_register.wgt_make_data_form.let_id.text().strip()
         
         if not str_id:
             QMessageBox.warning(self.dialog_register, "경고", "먼저 Make ID 버튼을 눌러 고유 ID를 발급받으세요.")
             return
 
         # 💡 새로 추가된 Asset Name 가져오기
-        str_asset_name = self.dialog_register.let_asset_name.text().strip()
+        str_asset_name = self.dialog_register.wgt_make_data_form.let_asset_name.text().strip()
         if not str_asset_name:
             QMessageBox.warning(self.dialog_register, "경고", "Asset Name을 입력하세요.")
             return
             
         # 나머지 폼 데이터 가져오기
         dict_data = self.ctrl_make_data.getFormData()
+        str_thumbnail_path = dict_data.get("thumbnail_path", "")
         
-        # 1. 저장할 폴더 선택 (Windows 탐색기)
-        str_folder_path = QFileDialog.getExistingDirectory(self.dialog_register, "JSON 파일을 저장할 에셋 폴더를 선택하세요")
-        if not str_folder_path:
+        if not str_thumbnail_path:
+            QMessageBox.warning(self.dialog_register, "경고", "썸네일 이미지를 드래그 앤 드롭 해주세요.")
             return
+        
+        # 1. 저장할 "상위 위치(베이스 폴더)" 선택
+        str_base_folder_path = QFileDialog.getExistingDirectory(self.dialog_register, "에셋 폴더를 생성할 상위 위치를 선택하세요")
+        if not str_base_folder_path:
+            return
+            
+        # 💡 [신규] UI에서 '추천 폴더명'을 가져와 실제 타겟 폴더 경로를 생성합니다.
+        str_target_folder_name = self.dialog_register.wgt_make_data_form.let_folder_name.text().strip()
+        str_target_dir = os.path.join(str_base_folder_path, str_target_folder_name)
+        
+        # 폴더가 존재하지 않는다면 깔끔하게 새로 생성!
+        if not os.path.exists(str_target_dir):
+            os.makedirs(str_target_dir)
             
         # 2. AssetFactory 규격에 맞게 JSON 중첩 딕셔너리 조립
         str_raw_type = dict_data.get("asset_type", "")
@@ -124,13 +138,19 @@ class RegisterController(QObject):
             "assetCategories": dict_asset_categories
         }
         
-        # 3. JSON 파일 저장
-        str_file_path = os.path.join(str_folder_path, f"{str_id}.json")
+        # 3. 새로 만든 에셋 폴더 안에 JSON 파일 저장
+        str_file_path = os.path.join(str_target_dir, f"{str_id}.json")
         try:
             with open(str_file_path, 'w', encoding='utf-8') as f:
                 json.dump(dict_save_data, f, indent=4)
                 
-            QMessageBox.information(self.dialog_register, "저장 완료", f"에셋 데이터가 성공적으로 생성되었습니다!\n\n경로: {str_file_path}")
+            # 4. 새로 만든 에셋 폴더 안에 썸네일 이미지 파일 복사
+            if os.path.exists(str_thumbnail_path):
+                _, str_ext = os.path.splitext(str_thumbnail_path)
+                str_target_image_path = os.path.join(str_target_dir, f"{str_id}_Preview{str_ext}")
+                shutil.copy2(str_thumbnail_path, str_target_image_path)
+                
+            QMessageBox.information(self.dialog_register, "저장 완료", f"에셋 전용 폴더와 데이터가 성공적으로 생성되었습니다!\n\n경로: {str_target_dir}")
             
         except Exception as e:
             QMessageBox.critical(self.dialog_register, "저장 오류", f"파일을 저장하는 중 오류가 발생했습니다.\n\n{e}")

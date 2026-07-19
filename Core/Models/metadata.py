@@ -13,6 +13,7 @@ class MetaData:
     str_asset_type: str         # 에셋 타입 ("Image" 또는 json의 "asset_type" 값)
     str_asset_name: str = "Unknown" # 💡 새로 추가된 자산 이름
     list_categories: list = field(default_factory=list) # 카테고리 (기본값은 빈 리스트)
+    bool_favorite: bool = False # 💡 [신규 추가] 즐겨찾기 여부를 저장합니다.
 
     def __post_init__(self):
         # ✅ [최적화 A] 필터링용 소문자 카테고리를 로드 시점에 미리 캐싱
@@ -26,5 +27,6 @@ class MetaData:
             "str_path_preview": self.str_path_preview,
             "str_asset_type": self.str_asset_type,
             "str_asset_name": self.str_asset_name,
-            "list_categories": self.list_categories
+            "list_categories": self.list_categories,
+            "bool_favorite": self.bool_favorite
         }

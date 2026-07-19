@@ -1,11 +1,13 @@
 # Features/Main/main_window.py
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QSplitter
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 
 from Core.Utils.resource_helper import resource_path
 from Features.SharedUI.top_bar import TopBar
 from Features.Category.category_panel import CategoryPanel
 from Features.AssetBrowse.main_panel import MainPanel
+from Features.Favorites.favorites_panel import FavoritesPanel # 💡 신규 임포트
 from Features.AssetBrowse.thumbnail_loader import ThumbnailLoader
 from Features.SharedUI.bottom_bar import BottomBar
 from Features.SharedUI.log_window import LogWindow
@@ -55,17 +57,37 @@ class MainWindow(QMainWindow):
         self.wgt_top_bar = TopBar()
         lay_main.addWidget(self.wgt_top_bar)
         
-        lay_content = QHBoxLayout()
-        lay_content.setContentsMargins(0, 0, 0, 0)
-        lay_content.setSpacing(0)
+        # 💡 [변경됨] 기존 QHBoxLayout 대신 QSplitter를 사용하여 폭 조절 기능을 추가했습니다.
+        wgt_splitter = QSplitter(Qt.Horizontal)
+        # (선택 사항) 스플리터의 핸들 두께를 설정하여 마우스로 잡기 편하게 만듭니다.
+        wgt_splitter.setHandleWidth(2)
+        
+        # 💡 좌측 공간을 다시 위/아래로 쪼개는 수직 스플리터 생성!
+        wgt_left_splitter = QSplitter(Qt.Vertical)
+        wgt_left_splitter.setHandleWidth(2)
         
         self.wgt_category_panel = CategoryPanel()
-        lay_content.addWidget(self.wgt_category_panel, 1)
+        wgt_left_splitter.addWidget(self.wgt_category_panel)
+        
+        self.wgt_favorites_panel = FavoritesPanel()
+        wgt_left_splitter.addWidget(self.wgt_favorites_panel)
+        
+        wgt_left_splitter.setSizes([400, 400]) # 5:5 비율
+        
+        wgt_splitter.addWidget(wgt_left_splitter)
         
         self.wgt_main_panel = MainPanel()
-        lay_content.addWidget(self.wgt_main_panel, 4)
+        wgt_splitter.addWidget(self.wgt_main_panel)
         
-        lay_main.addLayout(lay_content)
+        # 창 크기를 조절할 때의 늘어나는 비율 설정 (1:4)
+        wgt_splitter.setStretchFactor(0, 1)
+        wgt_splitter.setStretchFactor(1, 4)
+        
+        # 💡 [추가됨] 프로그램이 처음 켜질 때의 초기 사이즈 비율 강제 지정 (1:4 비율)
+        wgt_splitter.setSizes([200, 800])
+        
+        # 스플리터를 메인 레이아웃에 추가합니다.
+        lay_main.addWidget(wgt_splitter)
         
         self.wgt_bottom_bar = BottomBar()
         self.wgt_bottom_bar.sig_log_clicked.connect(self.wgt_log_window.show)

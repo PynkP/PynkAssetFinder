@@ -6,6 +6,8 @@ from PySide6.QtWidgets import QFrame, QVBoxLayout, QLabel
 from PySide6.QtGui import QPixmap, QFontMetrics, QImageReader
 from PySide6.QtCore import Qt, Signal, QSize
 
+from Features.AssetBrowse.ThumbnailOverlays.favorite_icon import FavoriteIcon # 💡 신규 임포트
+
 class ThumbnailWidget(QFrame):
     """
     개별 에셋의 이미지와 파일명을 화면에 보여주고, 
@@ -32,18 +34,29 @@ class ThumbnailWidget(QFrame):
 
     sig_clicked = Signal(str, str)
     sig_right_clicked = Signal(str, str, object) # (str_id, str_file_path, 마우스좌표)
+    sig_favorite_clicked = Signal(str) # 💡 (str_id) 추가
 
-    def __init__(self, _str_path, _str_name, _str_id):
+    def __init__(self, _str_path, _str_name, _str_id, _bool_favorite=False):
         super().__init__()
         self.str_file_path = _str_path
         self.str_file_name = _str_name
         self.str_id = _str_id
+        self.bool_favorite = _bool_favorite
         # ✅ [Lazy Loading] 이미지 로드 여부 상태 플래그
         self.bool_image_loaded = False
 
         self.initWidgetConfig()
         self.initUI()
         self.initLayout()
+
+        # 💖 [리팩토링] 하트 모양 라벨을 독립된 전용 위젯으로 교체!
+        self.wgt_favorite_icon = FavoriteIcon(self.bool_favorite, parent=self.wgt_lbl_img)
+        self.wgt_favorite_icon.sig_icon_clicked.connect(lambda: self.sig_favorite_clicked.emit(self.str_id))
+
+    def updateFavoriteIcon(self, _bool_fav):
+        self.bool_favorite = _bool_fav
+        # 💡 위젯에게 스스로 상태를 업데이트하라고 지시만 함 (SRP)
+        self.wgt_favorite_icon.setFavorite(self.bool_favorite)
 
     def initWidgetConfig(self):
         """위젯 자체의 기본 속성(크기, 커서, 초기 스타일)을 세팅합니다."""
@@ -89,6 +102,9 @@ class ThumbnailWidget(QFrame):
                 int_w - 4, int_h - 64, Qt.KeepAspectRatio, Qt.SmoothTransformation  # ✅ 동일하게 보정
             ))
 
+        # 💡 하트를 썸네일 오른쪽 아래 모서리에 고정!
+        self.wgt_favorite_icon.move(int_w - 35, int_h - 95)
+
     # ==========================================
     # ✅ [Lazy Loading 핵심] 이미지 로드 함수
     # ==========================================
@@ -123,11 +139,13 @@ class ThumbnailWidget(QFrame):
     def enterEvent(self, _event):
         """마우스 커서가 썸네일 영역 안으로 들어왔을 때 (Hover 효과 켜기)"""
         self.setStyleSheet(self.STYLE_HOVER)
+        self.wgt_favorite_icon.setHovered(True) # 💡 하트에게 호버 알림
         super().enterEvent(_event)
 
     def leaveEvent(self, _event):
         """마우스 커서가 썸네일 영역 밖으로 나갔을 때 (Hover 효과 끄기)"""
         self.setStyleSheet(self.STYLE_DEFAULT)
+        self.wgt_favorite_icon.setHovered(False) # 💡 하트에게 호버 해제 알림
         super().leaveEvent(_event)
 
     def mousePressEvent(self, _event):

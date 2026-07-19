@@ -25,6 +25,10 @@ class AssetManager:
             # 전체 에셋을 관리할 중앙 리스트
             self.list_all_assets = []
             
+            # 💡 [신규 추가] 즐겨찾기된 에셋만 관리하는 고속 리스트
+            self.list_favorite_assets = []
+
+            
             # 💡 [신규 추가] 현재 사용자가 선택한 카테고리 경로를 기억하는 변수
             self.list_current_category_path = [] 
             
@@ -35,9 +39,14 @@ class AssetManager:
         """스캐너가 찾아온 새로운 에셋 리스트를 중앙 저장소에 추가합니다."""
         self.list_all_assets.extend(_list_new_assets)
         
+        for asset in _list_new_assets:
+            if asset.bool_favorite:
+                self.list_favorite_assets.append(asset)
+        
         # ✅ 이미 정렬된 데이터(캐시 로드 시)는 정렬 생략
         if not _already_sorted:
             self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
+            self.list_favorite_assets.sort(key=lambda asset: asset.str_asset_name.lower())
 
     def addUniqueAssets(self, _list_new_assets):
         """스캐너가 찾아온 새로운 에셋 중 중복된 ID를 걸러내고 중앙 저장소에 추가합니다."""
@@ -49,10 +58,13 @@ class AssetManager:
             if asset.str_id not in set_existing_ids:
                 list_filtered_assets.append(asset)
                 set_existing_ids.add(asset.str_id) # 새 에셋 더미 안에서 중복이 발생할 경우도 방어
+                if asset.bool_favorite:
+                    self.list_favorite_assets.append(asset)
                 
         self.list_all_assets.extend(list_filtered_assets)
         # 새로 들어온 데이터가 있으니 다시 정렬해 줍니다.
         self.list_all_assets.sort(key=lambda asset: asset.str_asset_name.lower())
+        self.list_favorite_assets.sort(key=lambda asset: asset.str_asset_name.lower())
         
         # 몇 개가 새로 추가되었는지 반환해주면 로깅하기 편합니다.
         return len(list_filtered_assets)
@@ -64,6 +76,26 @@ class AssetManager:
     def clearAssets(self):
         """기존에 저장된 에셋 리스트를 비워줍니다. (새로운 폴더 스캔 시 사용)"""
         self.list_all_assets.clear()
+        self.list_favorite_assets.clear()
+
+    def getFavoriteAssets(self):
+        """즐겨찾기된 에셋들의 리스트를 반환합니다."""
+        return self.list_favorite_assets
+
+    def toggleFavorite(self, _str_id) -> bool:
+        """주어진 ID의 즐겨찾기 상태를 반전시키고, 최종 상태를 반환합니다."""
+        for asset in self.list_all_assets:
+            if asset.str_id == _str_id:
+                asset.bool_favorite = not asset.bool_favorite
+                if asset.bool_favorite:
+                    self.list_favorite_assets.append(asset)
+                    self.list_favorite_assets.sort(key=lambda a: a.str_asset_name.lower())
+                else:
+                    if asset in self.list_favorite_assets:
+                        self.list_favorite_assets.remove(asset)
+                print(f"💖 [AssetManager] 즐겨찾기 변경 완료 (ID: {_str_id}, 상태: {asset.bool_favorite})")
+                return asset.bool_favorite
+        return False
 
     def getAssetCount(self):
         """현재 보관 중인 에셋의 총 개수를 반환합니다."""
@@ -173,3 +205,33 @@ class AssetManager:
                     break # 이 에셋은 중복 추가되지 않도록 루프 탈출
                     
         return list_result
+
+    # ==========================================
+    # 💡 [신규 추가] 에셋 데이터 갱신 함수
+    # ==========================================
+    def updateAsset(self, _str_id, _str_new_name, _str_new_type, _list_new_categories, _str_new_preview_path=None):
+        """
+        인메모리에 있는 MetaData 객체를 직접 갱신합니다.
+        JSON 파일 저장은 ModifyController가 담당하고, 여기서는 메모리만 업데이트합니다.
+        """
+        for asset in self.list_all_assets:
+            if asset.str_id == _str_id:
+                asset.str_asset_name = _str_new_name
+                asset.str_asset_type = _str_new_type
+                asset.list_categories = _list_new_categories
+
+                # ✅ 필터링 캐시도 함께 갱신 (소문자 버전)
+                asset.list_categories_lower = [cat.lower() for cat in _list_new_categories]
+
+                # 썸네일 경로가 새로 제공됐을 때만 갱신
+                if _str_new_preview_path:
+                    asset.str_path_preview = _str_new_preview_path
+
+                # 이름 변경으로 정렬 순서가 달라질 수 있으니 재정렬
+                self.list_all_assets.sort(key=lambda a: a.str_asset_name.lower())
+                self.list_favorite_assets.sort(key=lambda a: a.str_asset_name.lower())
+
+                print(f"✏️ [AssetManager] 에셋 갱신 완료 (ID: {_str_id})")
+                return True
+        return False
+
